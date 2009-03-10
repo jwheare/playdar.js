@@ -92,7 +92,7 @@ Playdar.prototype = {
             return false;
         }
         this.auth_iframe = document.createElement('iframe');
-        this.auth_iframe.src = this.get_base_url("/auth_1?" + Playdar.toQueryString({
+        this.auth_iframe.src = this.get_base_url("/auth_1/?" + Playdar.toQueryString({
             receiverurl: this.receiver_url
         }));
         this.auth_iframe.width = "300";

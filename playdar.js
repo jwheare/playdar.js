@@ -72,16 +72,20 @@ Playdar.prototype = {
     // INITIALISATION
     
     init: function () {
-        this.stat();
-        // this.auth();
+        // this.stat();
+        this.auth();
     },
     
     // AUTHORISATION
     
     auth_token: false,
     auth: function () {
-        // TODO get token cookie
-        this.load_auth_iframe();
+        this.auth_token = Playdar.getcookie('auth');
+        if (this.auth_token) {
+            this.stat();
+        } else {
+            this.load_auth_iframe();
+        }
     },
     load_auth_iframe: function () {
         if (!this.receiver_url) {
@@ -89,8 +93,9 @@ Playdar.prototype = {
             return false;
         }
         this.auth_iframe = document.createElement('iframe');
-        // this.auth_iframe.src = this.get_base_url("/auth#" + encodeURIComponent(this.receiver_url));
-        this.auth_iframe.src = "http://playdar/auth.html#" + encodeURIComponent(this.receiver_url);
+        this.auth_iframe.src = this.get_base_url("/auth_1?" + Playdar.toQueryString({
+            receiverurl: this.receiver_url
+        }));
         this.auth_iframe.width = "300";
         this.auth_iframe.height = "250";
         this.auth_iframe.style.border = "1px solid #517e09";
@@ -102,7 +107,7 @@ Playdar.prototype = {
     },
     auth_callback: function (token) {
         this.auth_iframe.style.display = "none";
-        // TODO Set token cookie
+        Playdar.setcookie('auth', token, 365);
         this.auth_token = token;
         this.stat();
     },
@@ -582,4 +587,33 @@ Playdar.loadjs = function (url) {
    s.src = url;
    document.getElementsByTagName("head")[0].appendChild(s);
    // console.info('loadjs:', url);
+};
+
+Playdar.setcookie = function (name, value, days) {
+    console.log(name, value, days);
+    if (days) {
+        var date = new Date();
+        date.setTime(date.getTime() + (days*24*60*60*1000));
+        var expires = "; expires=" + date.toGMTString();
+    } else {
+        var expires = "";
+    }
+    document.cookie = "PD_" + name + "=" + value + expires + "; path=/";
+};
+Playdar.getcookie = function (name) {
+    var namekey = "PD_" + name + "=";
+    var cookies = document.cookie.split(';');
+    for (var i = 0; i < cookies.length;i++) {
+        var c = cookies[i];
+        while (c.charAt(0) == ' ') {
+            c = c.substring(1, c.length);
+        }
+        if (c.indexOf(namekey) == 0) {
+            return c.substring(namekey.length, c.length);
+        }
+    }
+    return null;
+};
+Playdar.eraseCookie = function (name) {
+    Playdar.setTime(name, "", -1);
 };

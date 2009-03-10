@@ -72,7 +72,6 @@ Playdar.prototype = {
     // INITIALISATION
     
     init: function () {
-        // this.stat();
         this.auth();
     },
     

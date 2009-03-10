@@ -201,7 +201,7 @@ Playdar.prototype = {
             }, response.refresh_interval);
         }
         
-        self.call_results_handler(response);
+        self.call_results_handler(response, final_answer);
         
         if (final_answer) {
             self.pending_count--;
@@ -234,7 +234,7 @@ Playdar.prototype = {
         }
         return false;
     },
-    call_results_handler: function (response) {
+    call_results_handler: function (response, final_answer) {
         if (response.qid && this.results_handlers[response.qid]) {
             // try a custom handler registered for this query id
             this.results_handlers[response.qid](response, final_answer);

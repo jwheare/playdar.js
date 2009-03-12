@@ -69,49 +69,13 @@ Playdar.prototype = {
         }
     },
     
-    // INITIALISATION
-    
-    init: function () {
-        this.auth();
-    },
-    
-    // AUTHORISATION
+    // INIT / STAT / AUTH
     
     auth_token: false,
-    auth: function () {
+    init: function () {
         this.auth_token = Playdar.getcookie('auth');
-        if (this.auth_token) {
-            this.stat();
-        } else {
-            this.load_auth_iframe();
-        }
-    },
-    load_auth_iframe: function () {
-        if (!this.receiver_url) {
-            // console.log('no receiver_url');
-            return false;
-        }
-        this.auth_iframe = document.createElement('iframe');
-        this.auth_iframe.src = this.get_base_url("/auth_1/?" + Playdar.toQueryString({
-            receiverurl: this.receiver_url
-        }));
-        this.auth_iframe.width = "300";
-        this.auth_iframe.height = "250";
-        this.auth_iframe.style.border = "1px solid #517e09";
-        this.auth_iframe.style.background = "#fff";
-        this.auth_iframe.style.position = "absolute";
-        this.auth_iframe.style.bottom = "10px";
-        this.auth_iframe.style.right = "10px";
-        document.getElementsByTagName("body")[0].appendChild(this.auth_iframe);
-    },
-    auth_callback: function (token) {
-        this.auth_iframe.style.display = "none";
-        Playdar.setcookie('auth', token, 365);
-        this.auth_token = token;
         this.stat();
     },
-    
-    // STAT LOCAL PLAYDAR DAEMON
     
     stat_response: false,
     stat: function () {
@@ -121,30 +85,52 @@ Playdar.prototype = {
         }, this.stat_timeout);
         Playdar.loadjs(this.get_url("stat", "handle_stat"));
     },
-    handle_stat: function (response) {
-        // console.dir(response);
-        this.stat_response = response;
-        this.stat_detected(this.stat_response.version);
-        this.handlers.stat_complete(true);
-    },
     check_stat_timeout: function () {
         if (!this.stat_response || this.stat_response.name != "playdar") {
             this.handlers.stat_complete(false);
         }
     },
-    stat_detected: function (version) {
-        this.detected_version = version;
+    handle_stat: function (response) {
+        console.dir(response);
+        this.stat_response = response;
+        if (response.authenticated) {
+            this.detected_version = response.version;
+        } else if (this.auth_token) {
+            this.clear_auth();
+        }
+        this.stat_detected();
+        this.handlers.stat_complete(true);
+    },
+    clear_auth: function () {
+        this.auth_token = false;
+        Playdar.deletecookie('auth');
+    },
+    stat_detected: function () {
         this.show_detected_message();
     },
     show_detected_message: function () {
         var messages = [];
-        if (this.detected_version) {
-            messages.push('<a href="' + this.web_host + '"><img src="' + this.web_host + '/static/playdar_logo_16x16.png" width="16" height="16" style="vertical-align: middle; float: left; margin: 0 5px 0 0; border: 0;" /> Playdar detected</a>');
+        messages.push('<a href="' + this.web_host + '"><img src="' + this.web_host + '/static/playdar_logo_16x16.png" width="16" height="16" style="vertical-align: middle; float: left; margin: 0 5px 0 0; border: 0;" /> Playdar detected</a>');
+        if (this.auth_token) {
+            messages.push('<strong>Authed</strong>');
+        } else {
+            messages.push('<a href="' + this.get_auth_url() + '" target="_blank">Auth</a>');
         }
         if (this.soundmanager) {
             messages.push('<a href="http://schillmania.com/projects/soundmanager2/">SM2 ready</a>');
         }
         this.show_status(messages.join(' | '));
+    },
+    get_auth_url: function () {
+        return this.get_base_url("/auth_1/?" + Playdar.toQueryString({
+            receiverurl: this.receiver_url
+        }));
+    },
+    auth_callback: function (token) {
+        Playdar.setcookie('auth', token, 365);
+        this.auth_token = token;
+        this.handlers.auth();
+        this.stat();
     },
     
     // CONTENT RESOLUTION
@@ -383,24 +369,6 @@ Playdar.prototype = {
         if (!colour) {
             var colour = "517e09";
         }
-        if (!Playdar.status_bar) {
-            var table = document.createElement("table");
-            table.setAttribute('cellpadding', 0);
-            table.setAttribute('cellspacing', 0);
-            table.setAttribute('border', 0);
-            table.style.position = 'fixed';
-            table.style.bottom = 0;
-            table.style.left = 0;
-            table.style.width = '100%';
-            table.style.height = '31px';
-            table.style.borderTop = '1px solid #bbb';
-            table.style.font = 'normal 10px/16px "Verdana", sans-serif';
-            
-            var tbody = document.createElement("tbody");
-            Playdar.status_bar = document.createElement("tr");
-        }
-        table.style.color = "#" + colour;
-        table.style.background = '#' + bg;
         
         if (!this.status_area) {
             this.status_area = document.createElement("td");
@@ -409,8 +377,6 @@ Playdar.prototype = {
             this.status_message = document.createElement("p");
             this.status_message.style.margin = "0";
             this.status_area.appendChild(this.status_message);
-            
-            Playdar.status_bar.appendChild(this.status_area);
         }
         this.status_message.innerHTML = text;
         
@@ -422,8 +388,6 @@ Playdar.prototype = {
             this.nowplaying.style.padding = "7px";
             this.nowplaying.style.width = "400px";
             this.nowplaying.style.textAlign = "center";
-            
-            Playdar.status_bar.appendChild(this.nowplaying);
         }
         
         if (!this.playstate) {
@@ -487,8 +451,6 @@ Playdar.prototype = {
             playback_tbody.appendChild(playback_row);
             playback_table.appendChild(playback_tbody);
             this.playstate.appendChild(playback_table);
-            
-            Playdar.status_bar.appendChild(this.playstate);
         }
         
         var marginBottom = document.body.style.marginBottom;
@@ -500,9 +462,35 @@ Playdar.prototype = {
         }
         document.body.style.marginBottom = (marginBottom.replace('px', '') - 0) + 31 + 'px';
         
-        tbody.appendChild(Playdar.status_bar);
-        table.appendChild(tbody);
-        document.body.appendChild(table);
+        if (!Playdar.status_bar) {
+            Playdar.status_bar = document.createElement("tr");
+            Playdar.status_bar.appendChild(this.status_area);
+            Playdar.status_bar.appendChild(this.nowplaying);
+            Playdar.status_bar.appendChild(this.playstate);
+        }
+        
+        if (!this.status_tbody) {
+            this.status_tbody = document.createElement("tbody");
+            this.status_tbody.appendChild(Playdar.status_bar);
+        }
+        
+        if (!this.status_table) {
+            this.status_table = document.createElement("table");
+            this.status_table.setAttribute('cellpadding', 0);
+            this.status_table.setAttribute('cellspacing', 0);
+            this.status_table.setAttribute('border', 0);
+            this.status_table.style.position = 'fixed';
+            this.status_table.style.bottom = 0;
+            this.status_table.style.left = 0;
+            this.status_table.style.width = '100%';
+            this.status_table.style.height = '31px';
+            this.status_table.style.borderTop = '1px solid #bbb';
+            this.status_table.style.font = 'normal 10px/16px "Verdana", sans-serif';
+            this.status_table.appendChild(this.status_tbody);
+            document.body.appendChild(this.status_table);
+        }
+        this.status_table.style.color = "#" + colour;
+        this.status_table.style.background = '#' + bg;
     }
 };
 
@@ -589,7 +577,6 @@ Playdar.loadjs = function (url) {
 };
 
 Playdar.setcookie = function (name, value, days) {
-    console.log(name, value, days);
     if (days) {
         var date = new Date();
         date.setTime(date.getTime() + (days*24*60*60*1000));
@@ -613,6 +600,6 @@ Playdar.getcookie = function (name) {
     }
     return null;
 };
-Playdar.eraseCookie = function (name) {
-    Playdar.setTime(name, "", -1);
+Playdar.deletecookie = function (name) {
+    Playdar.setcookie(name, "", -1);
 };

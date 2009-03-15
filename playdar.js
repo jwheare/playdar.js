@@ -130,7 +130,9 @@ Playdar.prototype = {
     },
     get_auth_url: function () {
         return this.get_base_url("/auth_1/?" + Playdar.toQueryString({
-            receiverurl: this.receiver_url
+            receiverurl: this.auth_receiver_url,
+            website: this.auth_website,
+            name: this.auth_name
         }));
     },
     auth_popup: null,

@@ -1,12 +1,10 @@
-Playdar = function (handlers) {
-    for (handler in this.handlers) {
-        this.register_handler(handler, this.handlers[handler]);
-    }
-    if (handlers) {
-        for (handler in handlers) {
-            this.register_handler(handler, handlers[handler]);
-        }
-    }
+Playdar = function (auth_details, handlers) {
+    // Setup auth
+    this.auth_details = auth_details;
+    // Setup handlers
+    this.register_handlers(Playdar.DefaultHandlers);
+    this.register_handlers(handlers);
+    // Register the instance
     this.uuid = Playdar.generate_uuid();
     Playdar.last = this;
     Playdar.instances[this.uuid] = Playdar.last;
@@ -14,55 +12,65 @@ Playdar = function (handlers) {
 
 Playdar.last = null;
 Playdar.instances = {};
-Playdar.create = function (handlers) {
-    return new Playdar(handlers);
+Playdar.create = function (auth_details, handlers) {
+    return new Playdar(auth_details, handlers);
 };
 
 Playdar.status_bar = null;
 
+Playdar.DefaultHandlers = {
+    auth: function () {
+        // Playdar authorised
+    },
+    stat_complete: function (detected) {
+        if (detected) {
+            // Playdar detected
+        } else {
+            // Playdar not found
+        }
+    },
+    results: function (response, final_answer) {
+        if (final_answer) {
+            if (response.results.length) {
+                // Found results
+            } else {
+                // No results
+            }
+        } else {
+            // Still polling
+        }
+    }
+};
+
 Playdar.prototype = {
-    lib_version: "0.3.2",
+    auth_details: null,
+    lib_version: "0.3.3",
     server_root: "localhost",
     server_port: "8888",
     stat_timeout: 2000,
     web_host: "http://www.playdar.org",
     auth_popup_name: "PD_auth",
     auth_popup_size: {
-        'w': 400,
-        'h': 250
+        'w': 500,
+        'h': 320
     },
     
-    // CUSTOM HANDLERS
-    
-    handlers: {
-        auth: function () {
-            // Playdar authorised
-        },
-        stat_complete: function (detected) {
-            if (detected) {
-                // Playdar detected
-            } else {
-                // Playdar not found
-            }
-        },
-        results: function (response, final_answer) {
-            if (final_answer) {
-                if (response.results.length) {
-                    // Found results
-                } else {
-                    // No results
-                }
-            } else {
-                // Still polling
-            }
-        }
-    },
+    handlers: {},
     register_handler: function (handler_name, callback) {
         if (!callback) {
             var callback = function () {};
         }
         var self = this;
         this.handlers[handler_name] = function () { return callback.apply(self, arguments); };
+    },
+    register_handlers: function (handlers) {
+        if (!handlers) {
+            return;
+        }
+        for (handler in handlers) {
+            this.register_handler(handler, handlers[handler]);
+        }
+        return true;
     },
     // Custom search result handlers can be bound to a specific qid
     results_handlers: {},
@@ -118,7 +126,7 @@ Playdar.prototype = {
         messages.push('<a href="' + this.web_host + '"><img src="' + this.web_host + '/static/playdar_logo_16x16.png" width="16" height="16" style="vertical-align: middle; float: left; margin: 0 5px 0 0; border: 0;" /> Playdar detected</a>');
         if (this.auth_token) {
             messages.push('<strong>Authed</strong>');
-        } else {
+        } else if (this.auth_details) {
             messages.push('<a href="' + this.get_auth_url()
                          + '" target="' + this.auth_popup_name
                          + '" onclick="return ' + this.jsonp_callback('start_auth') + '();">Auth</a>');
@@ -129,9 +137,8 @@ Playdar.prototype = {
         this.show_status(messages.join(' | '));
     },
     get_auth_url: function () {
-        return this.get_base_url("/auth_1/?" + Playdar.toQueryString({
-            receiverurl: this.receiver_url
-        }));
+        // return "http://localhost/playdar/auth_1.html#" + encodeURIComponent(this.auth_details.receiverurl);
+        return this.get_base_url("/auth_1/?" + Playdar.toQueryString(this.auth_details));
     },
     auth_popup: null,
     start_auth: function () {

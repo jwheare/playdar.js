@@ -26,6 +26,11 @@ Playdar.prototype = {
     server_port: "8888",
     stat_timeout: 2000,
     web_host: "http://www.playdar.org",
+    auth_popup_name: "PD_auth",
+    auth_popup_size: {
+        'w': 400,
+        'h': 250
+    },
     
     // CUSTOM HANDLERS
     
@@ -91,7 +96,7 @@ Playdar.prototype = {
         }
     },
     handle_stat: function (response) {
-        console.dir(response);
+        // console.dir(response);
         this.stat_response = response;
         if (response.authenticated) {
             this.detected_version = response.version;
@@ -114,7 +119,9 @@ Playdar.prototype = {
         if (this.auth_token) {
             messages.push('<strong>Authed</strong>');
         } else {
-            messages.push('<a href="' + this.get_auth_url() + '" target="_blank">Auth</a>');
+            messages.push('<a href="' + this.get_auth_url()
+                         + '" target="' + this.auth_popup_name
+                         + '" onclick="return ' + this.jsonp_callback('start_auth') + '();">Auth</a>');
         }
         if (this.soundmanager) {
             messages.push('<a href="http://schillmania.com/projects/soundmanager2/">SM2 ready</a>');
@@ -126,8 +133,48 @@ Playdar.prototype = {
             receiverurl: this.receiver_url
         }));
     },
+    auth_popup: null,
+    start_auth: function () {
+        if (this.auth_popup === null || this.auth_popup.closed) {
+            this.auth_popup = window.open(
+                this.get_auth_url(),
+                this.auth_popup_name,
+                this.get_auth_popup_options()
+            );
+        } else {
+            this.auth_popup.focus();
+        }
+        return false;
+    },
+    get_auth_popup_options: function () {
+        var popup_location = this.get_auth_popup_location();
+        return [
+            "left=" + popup_location.x,
+            "top=" + popup_location.y,
+            "width=" + this.auth_popup_size.w,
+            "height=" + this.auth_popup_size.h,
+            "location=yes",
+            "toolbar=no",
+            "menubar=yes",
+            "status=yes",
+            "resizable=yes",
+            "scrollbars=yes"
+        ].join(',');
+    },
+    get_auth_popup_location: function () {
+        var window_location = Playdar.get_window_location();
+        var window_size = Playdar.get_window_size();
+        return {
+            'x': Math.max(0, window_location.x + (window_size.w - this.auth_popup_size.w) / 2),
+            'y': Math.max(0, window_location.y + (window_size.h - this.auth_popup_size.h) / 2)
+        };
+    },
+    
     auth_callback: function (token) {
-        Playdar.setcookie('auth', token, 365);
+        // Playdar.setcookie('auth', token, 365);
+        if (this.auth_popup !== null && !this.auth_popup.closed) {
+            this.auth_popup.close();
+        }
         this.auth_token = token;
         this.handlers.auth();
         this.stat();
@@ -340,6 +387,7 @@ Playdar.prototype = {
         if (this.auth_token) {
             options.auth = this.auth_token;
         }
+        // console.dir(options);
         return this.get_base_url("/api/?" + Playdar.toQueryString(options));
     },
     
@@ -602,4 +650,27 @@ Playdar.getcookie = function (name) {
 };
 Playdar.deletecookie = function (name) {
     Playdar.setcookie(name, "", -1);
+};
+Playdar.get_window_location = function () {
+    var location = {};
+    if (window.screenLeft) {
+        location.x = window.screenLeft || 0;
+        location.y = window.screenTop || 0;
+    } else {
+        location.x = window.screenX || 0;
+        location.y = window.screenY || 0;
+    }
+    return location;
+};
+Playdar.get_window_size = function () {
+    return {
+        'w': (window && window.innerWidth) || 
+             (document && document.documentElement && document.documentElement.clientWidth) || 
+             (document && document.body && document.body.clientWidth) || 
+             0,
+        'h': (window && window.innerHeight) || 
+             (document && document.documentElement && document.documentElement.clientHeight) || 
+             (document && document.body && document.body.clientHeight) || 
+             0
+    };
 };

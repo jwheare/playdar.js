@@ -108,6 +108,7 @@ Playdar.prototype = {
         this.stat_response = response;
         if (response.authenticated) {
             this.detected_version = response.version;
+            this.handlers.auth();
         } else if (this.auth_token) {
             this.clear_auth();
         }
@@ -183,7 +184,6 @@ Playdar.prototype = {
             this.auth_popup.close();
         }
         this.auth_token = token;
-        this.handlers.auth();
         this.stat();
     },
     

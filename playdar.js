@@ -178,7 +178,7 @@ Playdar.prototype = {
     },
     
     auth_callback: function (token) {
-        // Playdar.setcookie('auth', token, 365);
+        Playdar.setcookie('auth', token, 365);
         if (this.auth_popup !== null && !this.auth_popup.closed) {
             this.auth_popup.close();
         }

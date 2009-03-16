@@ -86,7 +86,9 @@ Playdar.prototype = {
     
     auth_token: false,
     init: function () {
-        this.auth_token = Playdar.getcookie('auth');
+        if (!this.auth_token) {
+            this.auth_token = Playdar.getcookie('auth');
+        }
         this.stat();
     },
     
@@ -138,7 +140,6 @@ Playdar.prototype = {
         this.show_status(messages.join(' | '));
     },
     get_auth_url: function () {
-        // return "http://localhost/playdar/auth_1.html#" + encodeURIComponent(this.auth_details.receiverurl);
         return this.get_base_url("/auth_1/?" + Playdar.toQueryString(this.auth_details));
     },
     auth_popup: null,

@@ -22,7 +22,7 @@ Playdar.DefaultHandlers = {
     auth: function () {
         // Playdar authorised
     },
-    stat_complete: function (detected) {
+    stat: function (detected) {
         if (detected) {
             // Playdar detected
         } else {
@@ -44,7 +44,7 @@ Playdar.DefaultHandlers = {
 
 Playdar.prototype = {
     auth_details: null,
-    lib_version: "0.3.3",
+    lib_version: "0.3.4",
     server_root: "localhost",
     server_port: "8888",
     stat_timeout: 2000,
@@ -102,7 +102,7 @@ Playdar.prototype = {
     },
     check_stat_timeout: function () {
         if (!this.stat_response || this.stat_response.name != "playdar") {
-            this.handlers.stat_complete(false);
+            this.handlers.stat(false);
         }
     },
     handle_stat: function (response) {
@@ -115,7 +115,7 @@ Playdar.prototype = {
             this.clear_auth();
         }
         this.stat_detected();
-        this.handlers.stat_complete(true);
+        this.handlers.stat(true);
     },
     clear_auth: function () {
         this.auth_token = false;

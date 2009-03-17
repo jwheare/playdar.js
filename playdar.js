@@ -52,7 +52,7 @@ Playdar.prototype = {
     auth_popup_name: "PD_auth",
     auth_popup_size: {
         'w': 500,
-        'h': 320
+        'h': 260
     },
     
     handlers: {},

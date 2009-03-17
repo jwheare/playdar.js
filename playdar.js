@@ -44,7 +44,7 @@ Playdar.DefaultHandlers = {
 
 Playdar.prototype = {
     auth_details: null,
-    lib_version: "0.3.3",
+    lib_version: "0.3.4",
     server_root: "localhost",
     server_port: "8888",
     stat_timeout: 2000,

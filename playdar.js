@@ -86,7 +86,9 @@ Playdar.prototype = {
     
     auth_token: false,
     init: function () {
-        this.auth_token = Playdar.getcookie('auth');
+        if (!this.auth_token) {
+            this.auth_token = Playdar.getcookie('auth');
+        }
         this.stat();
     },
     
@@ -127,6 +129,13 @@ Playdar.prototype = {
         messages.push('<a href="' + this.web_host + '"><img src="' + this.web_host + '/static/playdar_logo_16x16.png" width="16" height="16" style="vertical-align: middle; float: left; margin: 0 5px 0 0; border: 0;" /> Playdar detected</a>');
         if (this.auth_token) {
             messages.push('<strong>Authed</strong>');
+        } else if (this.manual_auth) {
+            var input_id = "manualAuth_" + this.uuid;
+            messages.push('<input type="text" id="' + input_id + '" />'
+                        + ' <input type="submit" value="Auth" onclick="'
+                            + this.jsonp_callback('manual_auth_callback') + '(\'' + input_id + '\');'
+                            + 'return false;'
+                        + '" />');
         } else if (this.auth_details) {
             messages.push('<a href="' + this.get_auth_url()
                          + '" target="' + this.auth_popup_name
@@ -138,10 +147,10 @@ Playdar.prototype = {
         this.show_status(messages.join(' | '));
     },
     get_auth_url: function () {
-        // return "http://localhost/playdar/auth_1.html#" + encodeURIComponent(this.auth_details.receiverurl);
         return this.get_base_url("/auth_1/?" + Playdar.toQueryString(this.auth_details));
     },
     auth_popup: null,
+    manual_auth: false,
     start_auth: function () {
         if (this.auth_popup === null || this.auth_popup.closed) {
             this.auth_popup = window.open(
@@ -151,6 +160,11 @@ Playdar.prototype = {
             );
         } else {
             this.auth_popup.focus();
+        }
+        if (!this.auth_details.receiverurl) {
+            // Show manual auth form
+            this.manual_auth = true;
+            this.show_detected_message();
         }
         return false;
     },
@@ -184,7 +198,14 @@ Playdar.prototype = {
             this.auth_popup.close();
         }
         this.auth_token = token;
+        this.manual_auth = false;
         this.stat();
+    },
+    manual_auth_callback: function (input_id) {
+        var input = document.getElementById(input_id);
+        if (input && input.value) {
+            this.auth_callback(input.value);
+        }
     },
     
     // CONTENT RESOLUTION

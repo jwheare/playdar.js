@@ -145,8 +145,11 @@ Playdar.prototype = {
                        + '" />';
             } else if (this.auth_details) {
                 message = '<a href="' + this.get_auth_url()
-                             + '" target="' + this.auth_popup_name
-                             + '" onclick="return ' + this.jsonp_callback('start_auth') + '();">Connect</a>';
+                         + '" target="' + this.auth_popup_name
+                         + '" onclick="'
+                            + this.jsonp_callback('start_auth') + '();'
+                            + 'return false;'
+                         + '">Connect</a>';
             }
         }
         this.show_status(authed, message);
@@ -171,7 +174,6 @@ Playdar.prototype = {
             this.manual_auth = true;
             this.show_detected_message();
         }
-        return false;
     },
     get_auth_popup_options: function () {
         var popup_location = this.get_auth_popup_location();
@@ -565,7 +567,10 @@ Playdar.prototype = {
         // - Disconnect link
         this.disconnect_link = document.createElement("p");
         this.disconnect_link.style.margin = 0;
-        this.disconnect_link.innerHTML = '<a href="#" onclick="return ' + this.jsonp_callback('clear_auth') + '();">Disconnect</a>';
+        this.disconnect_link.innerHTML = '<a href="#" onclick="'
+            + this.jsonp_callback('clear_auth') + '();'
+            + 'return false;'
+            + '">Disconnect</a>';
         right_col.appendChild(this.disconnect_link);
         // - Query count
         this.query_count = document.createElement("span");

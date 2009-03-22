@@ -47,7 +47,7 @@ Playdar.DefaultHandlers = {
 
 Playdar.prototype = {
     auth_details: null,
-    lib_version: "0.3.4",
+    lib_version: "0.3.5",
     server_root: "localhost",
     server_port: "8888",
     stat_timeout: 2000,
@@ -110,32 +110,42 @@ Playdar.prototype = {
         }
     },
     handle_stat: function (response) {
-        // console.dir(response);
         this.stat_response = response;
-        this.show_detected_message();
+        this.update_status_bar();
         this.handlers.stat(true);
         
         if (response.authenticated) {
-            this.detected_version = response.version;
             this.handlers.auth();
         } else if (this.auth_token) {
             this.clear_auth();
         }
     },
     clear_auth: function () {
-        this.auth_token = false;
         this.stop_all();
+        Playdar.loadjs(this.get_revoke_url());
+        this.auth_token = false;
         Playdar.deletecookie('auth');
-        this.show_detected_message();
+        this.update_status_bar();
         this.handlers.clear_auth();
     },
-    show_detected_message: function () {
+    get_revoke_url: function () {
+        return this.get_base_url("/auth/?" + Playdar.toQueryString({
+            revoke: this.auth_token
+        }));
+    },
+    update_status_bar: function () {
+        if (!Playdar.status_bar) {
+            Playdar.status_bar = this.build_status_bar();
+        }
         var message;
         if (this.auth_token) {
-            var authed = true;
+            this.disconnect_link.style.display = "";
+            this.track_list_container.style.display = "";
+            this.load_tracks();
             message = "Ready";
         } else {
-            var authed = false;
+            this.disconnect_link.style.display = "none";
+            this.track_list_container.style.display = "none";
             if (this.manual_auth) {
                 var input_id = "manualAuth_" + this.uuid;
                 message = '<input type="text" id="' + input_id + '" />'
@@ -152,7 +162,43 @@ Playdar.prototype = {
                          + '">Connect</a>';
             }
         }
-        this.show_status(authed, message);
+        this.status.innerHTML = message;
+    },
+    load_tracks: function () {
+        Playdar.loadjs(this.get_url("list_queries", "handle_queries"));
+    },
+    handle_queries: function (response) {
+        var list_items = "";
+        for (var i = 0; i < response.queries.length; i++) {
+            var li = this.build_track_list_item(response.queries[i]);
+            list_items += li;
+        }
+        this.track_list.innerHTML = list_items;
+    },
+    build_track_list_item: function (response) {
+        var color = response.query.solved ? 'fff' : 'cbdab1';
+        var num_results = (response.results && response.results.length) || response.num_results;
+        var track = response.query.artist + ' - ' + response.query.track;
+        if (!num_results) {
+            track = "<s>" + track + "</s>";
+        }
+        var li = '<li style="'
+                   + 'margin: 4px 0 0 0;'
+                   + 'padding: 4px 0 0 0;'
+                   + 'line-height: 11px;'
+               + '">'
+                   + '<span style="padding: 0 7px">+</span>'
+                   + '<span style="padding: 0 7px 0 0">▸</span>'
+                   + '<a href="' + this.get_base_url("/queries/" + response.query.qid) + '" style="'
+                       + 'padding: 0 7px 0 0;'
+                       + 'text-decoration: none;'
+                       + 'color: #' + color + ';'
+                   + '" class="playdar_query">'
+                          + track
+                   + '</a>'
+                   + '<div style="display: none; margin-top: 5px; padding: 5px; border: 1px solid #3f7d31; border-width: 1px 0; background: #cbdab1; color: #3E6206;"></div>' // #5D8A0E
+               + '</li>';
+        return li;
     },
     get_auth_url: function () {
         return this.get_base_url("/auth_1/?" + Playdar.toQueryString(this.auth_details));
@@ -172,7 +218,7 @@ Playdar.prototype = {
         if (!this.auth_details.receiverurl) {
             // Show manual auth form
             this.manual_auth = true;
-            this.show_detected_message();
+            this.update_status_bar();
         }
     },
     get_auth_popup_options: function () {
@@ -236,7 +282,6 @@ Playdar.prototype = {
         Playdar.loadjs(this.get_url("resolve", "handle_resolution", params));
     },
     handle_resolution: function (response) {
-        // console.dir(response);
         this.last_qid = response.qid;
         this.resolve_qids.push(this.last_qid);
         this.get_results(response.qid);
@@ -248,9 +293,9 @@ Playdar.prototype = {
     },
     show_resolution_status: function () {
         if (this.query_count) {
-            var status = "Resolved: " + this.success_count + "/" + this.request_count;
+            var status = " " + this.success_count + "/" + this.request_count;
             if (this.pending_count) {
-                status += ' <img src="' + this.web_host + '/static/spinner_10px.gif" width="10" height="10" style="vertical-align: middle; margin: -2px 2px 0 2px"/> ' + this.pending_count;
+                status += ' <img src="' + this.web_host + '/static/track_throbber.gif" width="16" height="16" style="vertical-align: middle; margin: -2px 2px 0 2px"/> ' + this.pending_count;
             }
             this.query_count.innerHTML = status;
         }
@@ -262,27 +307,31 @@ Playdar.prototype = {
             qid: qid
         }));
     },
-    handle_results: function (response) {
-        // console.dir(response);
+    poll_results: function (response, callback) {
         // figure out if we should re-poll, or if the query is solved/failed:
+        var final_answer = this.should_stop_polling(response);
         var that = this;
-        var final_answer = that.should_stop_polling(response);
         if (!final_answer) {
             setTimeout(function () {
-                that.get_results(response.qid);
+                callback.call(that, response.qid);
             }, response.refresh_interval);
         }
-        
-        that.call_results_handler(response, final_answer);
-        
+        return final_answer;
+    },
+    handle_results: function (response) {
+        var final_answer = this.poll_results(response, this.get_results);
         if (final_answer) {
-            that.pending_count--;
+            this.pending_count--;
             if (response.results.length) {
-                that.success_count++;
+                this.success_count++;
             }
+            list_item = this.build_track_list_item(response);
+            this.session_track_list.innerHTML = list_item + this.session_track_list.innerHTML;
+            this.session_track_list.style.display = "";
         }
+        this.show_resolution_status();
         
-        that.show_resolution_status();
+        this.call_results_handler(response, final_answer);
     },
     should_stop_polling: function (response) {
         // Stop if we've exceeded our refresh limit
@@ -420,7 +469,6 @@ Playdar.prototype = {
         if (this.auth_token) {
             options.auth = this.auth_token;
         }
-        // console.dir(options);
         return this.get_base_url("/api/?" + Playdar.toQueryString(options));
     },
     
@@ -441,6 +489,7 @@ Playdar.prototype = {
     },
     
     // STATUS BAR
+    query_list_link: null,
     build_status_bar: function () {
         /* Status bar
            ---------- */
@@ -451,7 +500,7 @@ Playdar.prototype = {
         status_bar.style.width = '100%';
         status_bar.style.height = '36px';
         status_bar.style.padding = '7px 0';
-        status_bar.style.borderTop = '1px solid #86b71c';
+        status_bar.style.borderTop = '1px solid #3f7d31';
         status_bar.style.font = 'normal 13px/18px "Calibri", "Lucida Grande", sans-serif';
         status_bar.style.color = "#517e09";
         status_bar.style.background = '#cbdab1';
@@ -572,16 +621,86 @@ Playdar.prototype = {
             + 'return false;'
             + '">Disconnect</a>';
         right_col.appendChild(this.disconnect_link);
-        // - Query count
-        this.query_count = document.createElement("span");
-        this.query_count.style.display = "none";
-        left_col.appendChild(this.query_count);
         
-        /* Build structure
+        /* Build status bar
            --------------- */
         status_bar.appendChild(right_col);
         status_bar.appendChild(left_col);
         
+        /* Track list
+           ---------- */
+        // - Track list container
+        this.track_list_container = document.createElement("div");
+        this.track_list_container.style.position = "fixed";
+        this.track_list_container.style.bottom = 0;
+        this.track_list_container.style.left = 0;
+        this.track_list_container.style.marginBottom = 36 + (7*2) + "px";
+        this.track_list_container.style.font = 'normal 13px/18px "Calibri", "Lucida Grande", sans-serif';
+        this.track_list_container.style.color = "#fff";
+        // - Track list head
+        var track_list_head = document.createElement("h2");
+        track_list_head.style.cssFloat = "left";
+        track_list_head.style.margin = "0 0 -1px 0";
+        track_list_head.style.padding = "5px 7px";
+        track_list_head.style.border = "1px solid #3f7d31";
+        track_list_head.style.borderWidth = "1px 1px 1px 0";
+        track_list_head.style.borderBottomColor = "#669a28";
+        track_list_head.style.fontSize = "15px";
+        track_list_head.style.background = "#669a28";
+        track_list_head.style.zIndex = 10;
+        track_list_head.innerHTML = "Tracks";
+        // - Query count
+        this.query_count = document.createElement("span");
+        this.query_count.style.margin = "0 0 0 5px";
+        this.query_count.style.fontSize = "11px";
+        this.query_count.style.fontWeight = "normal";
+        this.query_count.style.color = "#cbdab1";
+        track_list_head.appendChild(this.query_count);
+        // - Toggle track list body
+        var that = this;
+        track_list_head.onclick = function () {
+            var hidden = (that.track_list_body.style.display == "none");
+            that.track_list_body.style.display = hidden ? "" : "none";
+        };
+        this.track_list_container.appendChild(track_list_head);
+        
+        // var playlist_head = track_list_head.cloneNode(false);
+        // playlist_head.style.background = "#3f7d31";
+        // playlist_head.innerHTML = "Playlist";
+        // this.track_list_container.appendChild(playlist_head);
+        
+        // - Track list body
+        this.track_list_body = document.createElement("div");
+        this.track_list_body.style.clear = "left";
+        this.track_list_body.style.display = "none";
+        this.track_list_body.style.width = "300px";
+        this.track_list_body.style.height = "300px";
+        this.track_list_body.style.overflow = "auto";
+        this.track_list_body.style.padding = 0;
+        this.track_list_body.style.border = "1px solid #3f7d31";
+        this.track_list_body.style.borderWidth = "1px 1px 0 0";
+        this.track_list_body.style.background = "#669a28";
+        // - Track list
+        this.track_list = document.createElement("ul");
+        this.track_list.style.margin = 0;
+        this.track_list.style.padding = 0;
+        // - Session track list
+        this.session_track_list = this.track_list.cloneNode(false);
+        this.session_track_list.style.paddingBottom = "7px";
+        this.session_track_list.style.borderBottom = "1px solid #3f7d31";
+        this.session_track_list.style.display = "none";
+        // - Toggle query results
+        var that = this;
+        this.track_list.onclick = function (e) { return that.querylist_click_handler.call(that, e); };
+        this.session_track_list.onclick = function (e) { return that.querylist_click_handler.call(that, e); };
+        
+        this.track_list_body.appendChild(this.session_track_list);
+        this.track_list_body.appendChild(this.track_list);
+        
+        this.track_list_container.appendChild(this.track_list_body);
+        
+        /* Build status bar */
+        document.body.appendChild(this.track_list_container);
         document.body.appendChild(status_bar);
         
         // Adjust the page bottom margin to fit status bar
@@ -596,13 +715,68 @@ Playdar.prototype = {
         
         return status_bar;
     },
-    show_status: function (authed, message) {
-        if (!Playdar.status_bar) {
-            Playdar.status_bar = this.build_status_bar();
+    querylist_click_handler: function (e) {
+        var target = Playdar.getTarget(e);
+        while (target.parentNode) {
+            if (target.nodeName == 'A' && target.className == 'playdar_query') {
+                if (target.nextSibling.style.display == "none") {
+                    this.hide_querylist_results();
+                    this.query_list_link = target;
+                    var url_root = this.get_base_url("/queries/");
+                    var qid = target.href.replace(url_root, '');
+                    if (qid) {
+                        this.get_querylist_results(qid);
+                    }
+                } else {
+                    this.query_list_link = target;
+                    this.hide_querylist_results();
+                }
+                return false;
+            }
+            target = target.parentNode;
         }
-        
-        this.disconnect_link.style.display = authed ? "" : "none";
-        this.status.innerHTML = message;
+    },
+    hide_querylist_results: function () {
+        if (this.query_list_link) {
+            this.query_list_link.parentNode.style.background = "none";
+            this.query_list_link.nextSibling.style.display = "none";
+            this.query_list_link = null;
+        }
+    },
+    get_querylist_results: function (qid) {
+        Playdar.loadjs(this.get_url("get_results", "show_querylist_results", {
+            qid: qid
+        }));
+    },
+    show_querylist_results: function (response) {
+        if (this.query_list_link) {
+            var final_answer = this.poll_results(response, this.get_querylist_results);
+            var querylist_results = this.query_list_link.nextSibling;
+            if (final_answer) {
+                if (response.results.length) {
+                    var result_table = "<table>";
+                    for (var i = 0; i < response.results.length; i++) {
+                        var result = response.results[i];
+                        var row = '<tr>'
+                                    + '<td style="width: 19px; text-align: right;">▸</td>'
+                                    + '<td style="width: 100px; padding: 0 3px;">' + result.source + '</td>'
+                                    + '<td style="width: 35px;">' + Playdar.mmss(result.duration) + '</td>'
+                                    + '<td style="width: 50px; text-align: right;">' + result.bitrate + 'Kbps</td>'
+                                + '</tr>';
+                        result_table += row;
+                    }
+                    result_table += "</table>";
+                    querylist_results.innerHTML = result_table;
+                } else {
+                    querylist_results.innerHTML = "No results";
+                }
+            } else {
+                querylist_results.innerHTML = "Checking results...";
+            }
+            
+            this.query_list_link.parentNode.style.background = "#55851a";
+            querylist_results.style.display = "";
+        }
     }
 };
 
@@ -648,6 +822,7 @@ Playdar.generate_uuid = function () {
     return uuid.join('');
 };
 
+// Query string helper
 Playdar.toQueryString = function (params) {
     function toQueryPair(key, value) {
         if (value === null) {
@@ -680,14 +855,15 @@ Playdar.mmss = function (secs) {
     }
     return Math.floor(secs/60) + ":" + s;
 };
-    
+
+// JSON loader
 Playdar.loadjs = function (url) {
    var s = document.createElement("script");
    s.src = url;
    document.getElementsByTagName("head")[0].appendChild(s);
-   // console.info('loadjs:', url);
 };
 
+// Cookie helpers
 Playdar.setcookie = function (name, value, days) {
     if (days) {
         var date = new Date();
@@ -715,6 +891,8 @@ Playdar.getcookie = function (name) {
 Playdar.deletecookie = function (name) {
     Playdar.setcookie(name, "", -1);
 };
+
+// Window dimension/position helpers
 Playdar.get_window_location = function () {
     var location = {};
     if (window.screenLeft) {
@@ -737,4 +915,10 @@ Playdar.get_window_size = function () {
              (document && document.body && document.body.clientHeight) || 
              0
     };
+};
+
+// Event target helper
+Playdar.getTarget = function (e) {
+    e = e || window.event;
+    return e.target || e.srcElement;
 };

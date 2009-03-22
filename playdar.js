@@ -890,14 +890,13 @@ Playdar.generate_uuid = function () {
 };
 
 // Query string helper
-Playdar.toQueryString = function (params) {
-    function toQueryPair(key, value) {
-        if (value === null) {
-            return key;
-        }
-        return key + '=' + encodeURIComponent(value);
+Playdar.toQueryPair = function (key, value) {
+    if (value === null) {
+        return key;
     }
-    
+    return key + '=' + encodeURIComponent(value);
+};
+Playdar.toQueryString = function (params) {
     var results = [];
     for (key in params) {
         var values = params[key];
@@ -905,10 +904,10 @@ Playdar.toQueryString = function (params) {
         
         if (Object.prototype.toString.call(values) == '[object Array]') {
             for (i = 0; i < values.length; i++) {
-                results.push(toQueryPair(key, values[i]));
+                results.push(Playdar.toQueryPair(key, values[i]));
             }
         } else {
-            results.push(toQueryPair(key, values));
+            results.push(Playdar.toQueryPair(key, values));
         }
     }
     return results.join('&');

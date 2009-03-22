@@ -22,6 +22,9 @@ Playdar.DefaultHandlers = {
     auth: function () {
         // Playdar authorised
     },
+    clear_auth: function () {
+        // Playdar deauthorised
+    },
     stat: function (detected) {
         if (detected) {
             // Playdar detected
@@ -109,40 +112,44 @@ Playdar.prototype = {
     handle_stat: function (response) {
         // console.dir(response);
         this.stat_response = response;
+        this.show_detected_message();
+        this.handlers.stat(true);
+        
         if (response.authenticated) {
             this.detected_version = response.version;
             this.handlers.auth();
         } else if (this.auth_token) {
             this.clear_auth();
         }
-        this.stat_detected();
-        this.handlers.stat(true);
     },
     clear_auth: function () {
         this.auth_token = false;
+        this.stop_all();
         Playdar.deletecookie('auth');
-    },
-    stat_detected: function () {
         this.show_detected_message();
+        this.handlers.clear_auth();
     },
     show_detected_message: function () {
-        var logo = '<img src="' + this.web_host + '/static/playdar_logo_16x16.png" width="16" height="16" style="vertical-align: middle; float: left; margin: 0 5px 0 0; border: 0;" />';
-        var message = logo;
+        var message;
         if (this.auth_token) {
-            message += ' <a href="' + this.get_base_url() + '" target="_blank">Playdar Settings</a>';
-        } else if (this.manual_auth) {
-            var input_id = "manualAuth_" + this.uuid;
-            message += '<input type="text" id="' + input_id + '" />'
-                        + ' <input type="submit" value="Auth" onclick="'
+            var authed = true;
+            message = "Ready";
+        } else {
+            var authed = false;
+            if (this.manual_auth) {
+                var input_id = "manualAuth_" + this.uuid;
+                message = '<input type="text" id="' + input_id + '" />'
+                       + ' <input type="submit" value="Auth" onclick="'
                             + this.jsonp_callback('manual_auth_callback') + '(\'' + input_id + '\');'
                             + 'return false;'
-                        + '" />';
-        } else if (this.auth_details) {
-            message += '<a href="' + this.get_auth_url()
-                         + '" target="' + this.auth_popup_name
-                         + '" onclick="return ' + this.jsonp_callback('start_auth') + '();">Authorise Playdar</a>';
+                       + '" />';
+            } else if (this.auth_details) {
+                message = '<a href="' + this.get_auth_url()
+                             + '" target="' + this.auth_popup_name
+                             + '" onclick="return ' + this.jsonp_callback('start_auth') + '();">Connect</a>';
+            }
         }
-        this.show_status(message);
+        this.show_status(authed, message);
     },
     get_auth_url: function () {
         return this.get_base_url("/auth_1/?" + Playdar.toQueryString(this.auth_details));
@@ -332,26 +339,22 @@ Playdar.prototype = {
         options.url = this.get_stream_url(result.sid);
         var that = this;
         options.whileplaying = function () {
-            if (that.progress) {
-                // Update the track progress
-                that.track_elapsed.innerHTML = Playdar.mmss(Math.round(this.position/1000));
-                // Update the playback progress bar
-                var duration;
-                if (this.readyState == 3) { // loaded/success
-                    duration = this.duration;
-                } else {
-                    duration = this.durationEstimate;
-                }
-                var portion_played = this.position/duration;
-                that.playhead.style.width = Math.round(portion_played*that.progress_bar_width) + "px";
+            // Update the track progress
+            that.track_elapsed.innerHTML = Playdar.mmss(Math.round(this.position/1000));
+            // Update the playback progress bar
+            var duration;
+            if (this.readyState == 3) { // loaded/success
+                duration = this.duration;
+            } else {
+                duration = this.durationEstimate;
             }
+            var portion_played = this.position/duration;
+            that.playhead.style.width = Math.round(portion_played*that.progress_bar_width) + "px";
         };
         options.whileloading = function () {
-            if (that.progress) {
-                // Update the loading progress bar
-                var buffered = this.bytesLoaded/this.bytesTotal;
-                that.bufferhead.style.width = Math.round(buffered*that.progress_bar_width) + "px";
-            }
+            // Update the loading progress bar
+            var buffered = this.bytesLoaded/this.bytesTotal;
+            that.bufferhead.style.width = Math.round(buffered*that.progress_bar_width) + "px";
         };
         var sound = this.soundmanager.createSound(options);
     },
@@ -372,7 +375,8 @@ Playdar.prototype = {
             // Update the track duration
             this.track_duration.innerHTML = Playdar.mmss(this.results[sid].duration);
             // Show progress bar
-            this.progress.style.visibility = "visible";
+            this.status.style.display = "none";
+            this.playback.style.display = "";
             
             this.nowplayingid = sid;
         }
@@ -384,12 +388,14 @@ Playdar.prototype = {
         if (this.soundmanager) {
             this.soundmanager.stopAll();
         }
-        if (this.progress) {
-            this.progress.style.visibility = "hidden";
-        }
-        if (this.track_name) {
-            this.track_name.innerHTML = "";
-        }
+        
+        this.playback.style.display = "none";
+        this.status.style.display = "";
+        
+        this.track_link.href = "#";
+        this.track_link.title = "";
+        this.track_name.innerHTML = "";
+        this.artist_name.innerHTML = "";
     },
     
     // UTILITY FUNCTIONS
@@ -433,154 +439,165 @@ Playdar.prototype = {
     },
     
     // STATUS BAR
-    
-    show_status: function (text, bg, colour) {
+    build_status_bar: function () {
+        /* Status bar
+           ---------- */
+        var status_bar = document.createElement("div");
+        status_bar.style.position = 'fixed';
+        status_bar.style.bottom = 0;
+        status_bar.style.left = 0;
+        status_bar.style.width = '100%';
+        status_bar.style.height = '36px';
+        status_bar.style.padding = '7px 0';
+        status_bar.style.borderTop = '1px solid #86b71c';
+        status_bar.style.font = 'normal 13px/18px "Calibri", "Lucida Grande", sans-serif';
+        status_bar.style.color = "#517e09";
+        status_bar.style.background = '#cbdab1';
+        
+        /* Left column
+           ----------- */
+        var left_col = document.createElement("div");
+        left_col.style.padding = "0 7px";
+        // Logo
+        var logo = '<img src="' + this.web_host + '/static/playdar_logo_32x32.png" width="32" height="32" style="vertical-align: middle; float: left; margin: 0 10px 0 0; border: 0; line-height: 36px;" />';
+        left_col.innerHTML = logo;
+        
+        // - Status message
+        this.status = document.createElement("p");
+        this.status.style.margin = "0";
+        this.status.style.padding = "0 8px";
+        this.status.style.lineHeight = "36px";
+        this.status.style.fontSize = "15px";
+        left_col.appendChild(this.status);
+        
+        // - Playback
+        this.playback = document.createElement("div");
+        this.playback.style.padding = "0 7px";
+        this.playback.style.display = "none";
+        // - Now playing track
+        var track_title = document.createElement("p");
+        track_title.style.margin = "0";
+        this.track_link = document.createElement("a");
+        this.track_link.style.textDecoration = "none";
+        
+        this.artist_name = document.createElement("span");
+        this.artist_name.style.textTransform = "uppercase";
+        this.artist_name.style.color = "#5d8a0e";
+        
+        this.track_name = document.createElement("strong");
+        this.track_name.style.margin = "0 0 0 10px";
+        this.track_name.style.color = "#3e6206";
+        
+        this.track_link.appendChild(this.artist_name);
+        this.track_link.appendChild(this.track_name);
+        track_title.appendChild(this.track_link);
+        this.playback.appendChild(track_title);
+        
+        // Playback Progress table
+        var progress_table = document.createElement("table");
+        progress_table.setAttribute('cellpadding', 0);
+        progress_table.setAttribute('cellspacing', 0);
+        progress_table.setAttribute('border', 0);
+        progress_table.style.color = "#517e09";
+        progress_table.style.font = 'normal 10px/16px "Verdana", sans-serif';
+        var progress_tbody = document.createElement("tbody");
+        var progress_row = document.createElement("tr");
+        // L: - Time elapsed
+        this.track_elapsed = document.createElement("td");
+        this.track_elapsed.style.verticalAlign = "middle";
+        progress_row.appendChild(this.track_elapsed);
+        // M: Bar column
+        var progress_cell = document.createElement("td");
+        progress_cell.style.padding = "0 5px";
+        progress_cell.style.verticalAlign = "middle";
+        // Bar container
+        var progress_bar = document.createElement("div");
+        progress_bar.style.width = this.progress_bar_width + "px";
+        progress_bar.style.height = "9px";
+        progress_bar.style.border = "1px solid #517e09";
+        progress_bar.style.background = "#fff";
+        progress_bar.style.position = "relative";
+        // - Buffer progress
+        this.bufferhead = document.createElement("div");
+        this.bufferhead.style.position = "absolute";
+        this.bufferhead.style.width = 0;
+        this.bufferhead.style.height = "9px";
+        this.bufferhead.style.background = "#e1f1c5";
+        progress_bar.appendChild(this.bufferhead);
+        // - Playback progress
+        this.playhead = document.createElement("div");
+        this.playhead.style.position = "absolute";
+        this.playhead.style.width = 0;
+        this.playhead.style.height = "9px";
+        this.playhead.style.background = "#98be3d";
+        progress_bar.appendChild(this.playhead);
+        // Click to toggle pause
         var that = this;
-        if (!bg) {
-            var bg = "cbdab1";
-        }
-        if (!colour) {
-            var colour = "517e09";
-        }
-        
-        if (!Playdar.status_bar) {
-            /* Left column */
-            var left_col = document.createElement("td");
-            left_col.style.padding = "7px";
-            left_col.style.width = "300px";
-            // Status
-            var status = document.createElement("p");
-            status.style.margin = "0";
-            // - Status message
-            this.status_message = document.createElement("span");
-            status.appendChild(this.status_message);
-            left_col.appendChild(status);
-            
-            /* Middle column */
-            var middle_col = document.createElement("td");
-            middle_col.style.padding = "7px";
-            middle_col.style.textAlign = "center";
-            // Playback row
-            var playback_row = document.createElement("tr");
-            // - Now playing track
-            var track_title = document.createElement("p");
-            track_title.style.margin = "0";
-            this.track_link = document.createElement("a");
-            this.track_link.style.textDecoration = "none";
-            this.track_name = document.createElement("strong");
-            this.track_name.style.margin = "0 5px";
-            this.track_name.style.color = "#3e6206";
-            this.artist_name = document.createElement("span");
-            this.artist_name.style.textTransform = "uppercase";
-            this.artist_name.style.color = "#5d8a0e";
-            this.track_link.appendChild(this.track_name);
-            this.track_link.appendChild(this.artist_name);
-            track_title.appendChild(this.track_link);
-            middle_col.appendChild(track_title);
-            
-            // L: - Time elapsed
-            this.track_elapsed = document.createElement("td");
-            this.track_elapsed.style.verticalAlign = "middle";
-            playback_row.appendChild(this.track_elapsed);
-            // M: Bar column
-            var progress_cell = document.createElement("td");
-            progress_cell.style.padding = "0 5px";
-            progress_cell.style.verticalAlign = "middle";
-            // Bar container
-            var progress_bar = document.createElement("div");
-            progress_bar.style.width = this.progress_bar_width + "px";
-            progress_bar.style.height = "9px";
-            progress_bar.style.border = "1px solid #517e09";
-            progress_bar.style.background = "#fff";
-            progress_bar.style.position = "relative";
-            // - Buffer progress
-            this.bufferhead = document.createElement("div");
-            this.bufferhead.style.position = "absolute";
-            this.bufferhead.style.width = 0;
-            this.bufferhead.style.height = "9px";
-            this.bufferhead.style.background = "#e1f1c5";
-            progress_bar.appendChild(this.bufferhead);
-            // - Playback progress
-            this.playhead = document.createElement("div");
-            this.playhead.style.position = "absolute";
-            this.playhead.style.width = 0;
-            this.playhead.style.height = "9px";
-            this.playhead.style.background = "#98be3d";
-            progress_bar.appendChild(this.playhead);
-            // Click to toggle pause
-            progress_bar.onclick = function () {
-                if (that.nowplayingid) {
-                    that.play_stream(that.nowplayingid);
-                }
-            };
-            progress_cell.appendChild(progress_bar);
-            playback_row.appendChild(progress_cell);
-            // R: - Track duration
-            this.track_duration = document.createElement("td");
-            this.track_duration.style.verticalAlign = "middle";
-            playback_row.appendChild(this.track_duration);
-            // - Playback Progress table
-            this.progress = document.createElement("table");
-            this.progress.setAttribute('cellpadding', 0);
-            this.progress.setAttribute('cellspacing', 0);
-            this.progress.setAttribute('border', 0);
-            // this.progress.style.cssFloat = "right";
-            this.progress.style.margin = "0 auto";
-            this.progress.style.color = "#517e09";
-            this.progress.style.font = 'normal 10px/16px "Verdana", sans-serif';
-            this.progress.style.visibility = "hidden";
-            var playback_tbody = document.createElement("tbody");
-            playback_tbody.appendChild(playback_row);
-            this.progress.appendChild(playback_tbody);
-            middle_col.appendChild(this.progress);
-            
-            /* Right column */
-            right_col = document.createElement("td");
-            right_col.style.padding = "7px";
-            right_col.style.width = "300px";
-            right_col.style.textAlign = "right";
-            // - Query count
-            this.query_count = document.createElement("span");
-            right_col.appendChild(this.query_count);
-            
-            /* Build status bar structure */
-            // Bar row
-            Playdar.status_bar = document.createElement("tr");
-            Playdar.status_bar.appendChild(left_col);
-            Playdar.status_bar.appendChild(middle_col);
-            Playdar.status_bar.appendChild(right_col);
-            // Bar tbody
-            this.status_tbody = document.createElement("tbody");
-            this.status_tbody.appendChild(Playdar.status_bar);
-            // Bar table
-            this.status_table = document.createElement("table");
-            this.status_table.setAttribute('cellpadding', 0);
-            this.status_table.setAttribute('cellspacing', 0);
-            this.status_table.setAttribute('border', 0);
-            this.status_table.style.position = 'fixed';
-            this.status_table.style.bottom = 0;
-            this.status_table.style.left = 0;
-            this.status_table.style.width = '100%';
-            this.status_table.style.height = '31px';
-            this.status_table.style.borderTop = '1px solid #bbb';
-            this.status_table.style.font = 'normal 10px/16px "Verdana", sans-serif';
-            this.status_table.appendChild(this.status_tbody);
-            document.body.appendChild(this.status_table);
-            
-            /* Adjust the page bottom margin to fit status bar */
-            var marginBottom = document.body.style.marginBottom;
-            if (!marginBottom) {
-                var css = document.defaultView.getComputedStyle(document.body, null);
-                if (css) {
-                    marginBottom = css.marginBottom;
-                }
+        progress_bar.onclick = function () {
+            if (that.nowplayingid) {
+                that.play_stream(that.nowplayingid);
             }
-            document.body.style.marginBottom = (marginBottom.replace('px', '') - 0) + 31 + 'px';
+        };
+        progress_cell.appendChild(progress_bar);
+        progress_row.appendChild(progress_cell);
+        // R: - Track duration
+        this.track_duration = document.createElement("td");
+        this.track_duration.style.verticalAlign = "middle";
+        progress_row.appendChild(this.track_duration);
+        
+        progress_tbody.appendChild(progress_row);
+        progress_table.appendChild(progress_tbody);
+        this.playback.appendChild(progress_table);
+        
+        left_col.appendChild(this.playback);
+        
+        /* Right column
+           ------------ */
+        right_col = document.createElement("div");
+        right_col.style.cssFloat = "right";
+        right_col.style.padding = "0 8px";
+        right_col.style.textAlign = "right";
+        // Settings link
+        var settings_link = document.createElement("p");
+        settings_link.style.margin = 0;
+        settings_link.innerHTML = '<a href="' + this.get_base_url() + '" target="_blank">Settings</a>';
+        right_col.appendChild(settings_link);
+        // - Disconnect link
+        this.disconnect_link = document.createElement("p");
+        this.disconnect_link.style.margin = 0;
+        this.disconnect_link.innerHTML = '<a href="#" onclick="return ' + this.jsonp_callback('clear_auth') + '();">Disconnect</a>';
+        right_col.appendChild(this.disconnect_link);
+        // - Query count
+        this.query_count = document.createElement("span");
+        this.query_count.style.display = "none";
+        left_col.appendChild(this.query_count);
+        
+        /* Build structure
+           --------------- */
+        status_bar.appendChild(right_col);
+        status_bar.appendChild(left_col);
+        
+        document.body.appendChild(status_bar);
+        
+        // Adjust the page bottom margin to fit status bar
+        var marginBottom = document.body.style.marginBottom;
+        if (!marginBottom) {
+            var css = document.defaultView.getComputedStyle(document.body, null);
+            if (css) {
+                marginBottom = css.marginBottom;
+            }
+        }
+        document.body.style.marginBottom = (marginBottom.replace('px', '') - 0) + 36 + 'px';
+        
+        return status_bar;
+    },
+    show_status: function (authed, message) {
+        if (!Playdar.status_bar) {
+            Playdar.status_bar = this.build_status_bar();
         }
         
-        this.status_message.innerHTML = text;
-        this.status_table.style.color = "#" + colour;
-        this.status_table.style.background = '#' + bg;
+        this.disconnect_link.style.display = authed ? "" : "none";
+        this.status.innerHTML = message;
     }
 };
 

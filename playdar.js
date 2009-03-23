@@ -149,17 +149,17 @@ Playdar.prototype = {
             if (this.manual_auth) {
                 var input_id = "manualAuth_" + this.uuid;
                 message = '<input type="text" id="' + input_id + '" />'
-                       + ' <input type="submit" value="Auth" onclick="'
-                            + this.jsonp_callback('manual_auth_callback') + '(\'' + input_id + '\');'
-                            + 'return false;'
-                       + '" />';
+                    + ' <input type="submit" value="Auth" onclick="'
+                        + this.jsonp_callback('manual_auth_callback') + '(\'' + input_id + '\');'
+                        + 'return false;'
+                    + '" />';
             } else if (this.auth_details) {
                 message = '<a href="' + this.get_auth_url()
-                         + '" target="' + this.auth_popup_name
-                         + '" onclick="'
-                            + this.jsonp_callback('start_auth') + '();'
-                            + 'return false;'
-                         + '">Connect</a>';
+                        + '" target="' + this.auth_popup_name
+                        + '" onclick="'
+                        + this.jsonp_callback('start_auth') + '();'
+                        + 'return false;'
+                    + '">Connect</a>';
             }
         }
         this.status.innerHTML = message;
@@ -183,21 +183,21 @@ Playdar.prototype = {
             track = "<s>" + track + "</s>";
         }
         var li = '<li style="'
-                   + 'margin: 4px 0 0 0;'
-                   + 'padding: 4px 0 0 0;'
-                   + 'line-height: 11px;'
-               + '">'
-                   + '<span style="padding: 0 7px">+</span>'
-                   + '<span style="padding: 0 7px 0 0">▸</span>'
-                   + '<a href="' + this.get_base_url("/queries/" + response.query.qid) + '" style="'
-                       + 'padding: 0 7px 0 0;'
-                       + 'text-decoration: none;'
-                       + 'color: #' + color + ';'
-                   + '" class="playdar_query">'
-                          + track
-                   + '</a>'
-                   + '<div style="display: none; margin-top: 5px; padding: 5px; border: 1px solid #3f7d31; border-width: 1px 0; background: #cbdab1; color: #3E6206;"></div>' // #5D8A0E
-               + '</li>';
+                + 'margin: 4px 0 0 0;'
+                + 'padding: 4px 0 0 0;'
+                + 'line-height: 11px;'
+            + '">'
+                + '<span style="padding: 0 7px">+</span>'
+                + '<span style="padding: 0 7px 0 0">▸</span>'
+                + '<a href="' + this.get_base_url("/queries/" + response.query.qid) + '" style="'
+                    + 'padding: 0 7px 0 0;'
+                    + 'text-decoration: none;'
+                    + 'color: #' + color + ';'
+                + '" class="playdar_query">'
+                    + track
+                + '</a>'
+                + '<div style="display: none; margin-top: 5px; padding: 5px; border: 1px solid #3f7d31; border-width: 1px 0; background: #cbdab1; color: #3E6206;"></div>'
+            + '</li>';
         return li;
     },
     get_auth_url: function () {
@@ -408,36 +408,42 @@ Playdar.prototype = {
             that.bufferhead.style.width = Math.round(buffered*that.progress_bar_width) + "px";
         };
         var sound = this.soundmanager.createSound(options);
+        return sound;
     },
     play_stream: function (sid) {
         if (!this.soundmanager) {
             return false;
         }
         var sound = this.soundmanager.getSoundById(sid);
-        if (this.nowplayingid != sid && sound.playState == 0) {
+        if (this.nowplayingid != sid) {
             this.stop_all();
-            // Initialise the track progress
-            this.track_elapsed.innerHTML = Playdar.mmss(0);
-            // Update the track link
-            this.track_link.href = this.get_stream_url(this.results[sid].sid);
-            this.track_link.title = this.results[sid].source;
-            this.track_name.innerHTML = this.results[sid].track;
-            this.artist_name.innerHTML = this.results[sid].artist;
-            // Update the track duration
-            this.track_duration.innerHTML = Playdar.mmss(this.results[sid].duration);
-            // Show progress bar
-            this.status.style.display = "none";
-            this.playback.style.display = "";
-            
-            this.nowplayingid = sid;
+            if (sound.playState == 0) {
+                // Initialise the track progress
+                this.track_elapsed.innerHTML = Playdar.mmss(0);
+                // Update the track link
+                this.track_link.href = this.get_stream_url(this.results[sid].sid);
+                this.track_link.title = this.results[sid].source;
+                this.track_name.innerHTML = this.results[sid].track;
+                this.artist_name.innerHTML = this.results[sid].artist;
+                // Update the track duration
+                this.track_duration.innerHTML = Playdar.mmss(this.results[sid].duration);
+                // Show progress bar
+                this.status.style.display = "none";
+                this.playback.style.display = "";
+                
+                this.nowplayingid = sid;
+            }
         }
         
         sound.togglePause();
         return sound;
     },
     stop_all: function () {
-        if (this.soundmanager) {
-            this.soundmanager.stopAll();
+        if (this.soundmanager && this.nowplayingid) {
+            var sound = this.soundmanager.getSoundById(this.nowplayingid);
+            sound.stop();
+            sound.setPosition(1);
+            this.nowplayingid = null;
         }
         
         this.playback.style.display = "none";
@@ -497,6 +503,7 @@ Playdar.prototype = {
         status_bar.style.position = 'fixed';
         status_bar.style.bottom = 0;
         status_bar.style.left = 0;
+        status_bar.style.zIndex = 100;
         status_bar.style.width = '100%';
         status_bar.style.height = '36px';
         status_bar.style.padding = '7px 0';
@@ -634,6 +641,7 @@ Playdar.prototype = {
         this.track_list_container.style.position = "fixed";
         this.track_list_container.style.bottom = 0;
         this.track_list_container.style.left = 0;
+        this.track_list_container.style.zIndex = 100;
         this.track_list_container.style.marginBottom = 36 + (7*2) + "px";
         this.track_list_container.style.font = 'normal 13px/18px "Calibri", "Lucida Grande", sans-serif';
         this.track_list_container.style.color = "#fff";
@@ -647,7 +655,7 @@ Playdar.prototype = {
         track_list_head.style.borderBottomColor = "#669a28";
         track_list_head.style.fontSize = "15px";
         track_list_head.style.background = "#669a28";
-        track_list_head.style.zIndex = 10;
+        track_list_head.style.color = "#fff";
         track_list_head.innerHTML = "Tracks";
         // - Query count
         this.query_count = document.createElement("span");
@@ -675,7 +683,9 @@ Playdar.prototype = {
         this.track_list_body.style.display = "none";
         this.track_list_body.style.width = "300px";
         this.track_list_body.style.height = "300px";
-        this.track_list_body.style.overflow = "auto";
+        this.track_list_body.style.overflowY = "auto";
+        this.track_list_body.style.overflowX = "hidden";
+        this.track_list_body.style.whiteSpace = "nowrap";
         this.track_list_body.style.padding = 0;
         this.track_list_body.style.border = "1px solid #3f7d31";
         this.track_list_body.style.borderWidth = "1px 1px 0 0";
@@ -691,8 +701,7 @@ Playdar.prototype = {
         this.session_track_list.style.display = "none";
         // - Toggle query results
         var that = this;
-        this.track_list.onclick = function (e) { return that.querylist_click_handler.call(that, e); };
-        this.session_track_list.onclick = function (e) { return that.querylist_click_handler.call(that, e); };
+        this.track_list_body.onclick = function (e) { return that.querylist_click_handler.call(that, e); };
         
         this.track_list_body.appendChild(this.session_track_list);
         this.track_list_body.appendChild(this.track_list);
@@ -715,6 +724,7 @@ Playdar.prototype = {
         
         return status_bar;
     },
+    nowplaying_query_button: null,
     querylist_click_handler: function (e) {
         var target = Playdar.getTarget(e);
         while (target.parentNode) {
@@ -732,6 +742,19 @@ Playdar.prototype = {
                     this.hide_querylist_results();
                 }
                 return false;
+            } else if (target.nodeName == 'TR' && target.className.indexOf('sid_') == 0) {
+                var sid = target.className.replace('sid_', '');
+                if (this.nowplaying_query_button) {
+                    this.nowplaying_query_button.style.visibility = 'hidden';
+                }
+                // Find: tr td.playdar_play span
+                if (target.firstChild.className == 'playdar_play') {
+                    this.nowplaying_query_button = target.firstChild.firstChild;
+                } else {
+                    this.nowplaying_query_button = target.previousSibling.firstChild.firstChild;
+                }
+                this.nowplaying_query_button.style.visibility = 'visible';
+                this.play_stream(sid);
             }
             target = target.parentNode;
         }
@@ -754,19 +777,28 @@ Playdar.prototype = {
             var querylist_results = this.query_list_link.nextSibling;
             if (final_answer) {
                 if (response.results.length) {
-                    var result_table = "<table>";
+                    var result_table = '<table cellpadding="0" cellspacing="0" border="0" style="'
+                            + 'width: 275px;'
+                        + '">';
                     for (var i = 0; i < response.results.length; i++) {
-                        var result = response.results[i];
-                        var row = '<tr>'
-                                    + '<td style="width: 19px; text-align: right;">▸</td>'
-                                    + '<td style="width: 100px; padding: 0 3px;">' + result.source + '</td>'
-                                    + '<td style="width: 35px;">' + Playdar.mmss(result.duration) + '</td>'
-                                    + '<td style="width: 50px; text-align: right;">' + result.bitrate + 'Kbps</td>'
-                                + '</tr>';
-                        result_table += row;
+                        result_table += this.build_querylist_result_table(response.results[i], i);
                     }
-                    result_table += "</table>";
+                    result_table += '</table>';
                     querylist_results.innerHTML = result_table;
+                    
+                    if (this.nowplayingid) {
+                        var cells = querylist_results.getElementsByTagName('td');
+                        for (var i = 0; i < cells.length; i++) {
+                            var cell = cells[i];
+                            if (cell.className == 'playdar_play') {
+                                var sid = cell.parentNode.className.replace('sid_', '');
+                                if (this.nowplayingid == sid) {
+                                    this.nowplaying_query_button = cell.firstChild;
+                                    this.nowplaying_query_button.style.visibility = 'visible';
+                                }
+                            }
+                        }
+                    }
                 } else {
                     querylist_results.innerHTML = "No results";
                 }
@@ -777,6 +809,41 @@ Playdar.prototype = {
             this.query_list_link.parentNode.style.background = "#55851a";
             querylist_results.style.display = "";
         }
+    },
+    build_querylist_result_table: function (result, i) {
+        var sound = this.register_stream(result);
+        var row_tag_contents = ' class="sid_' + result.sid + '"';
+        var border = '';
+        if (i > 0) {
+            border = 'border-top: 1px solid #bbcaa1;';
+        }
+        var score = '';
+        if (result.score < 1) {
+            row_tag_contents = row_tag_contents + ' style="color: #5D8A0E;"';
+            score = result.score.toFixed(1);
+        }
+        var row = '<tr' + row_tag_contents + '>'
+                + '<td class="playdar_play" style="'
+                    + 'width: 12px;'
+                    + 'text-align: right;'
+                    + 'padding: 5px;'
+                    + border
+                + '">'
+                    + '<span style="visibility: hidden;">'
+                        + '▸'
+                    + '</span>'
+                + '</td>'
+                + '<td colspan="3" style="padding: 5px 3px;' + border + '">'
+                    + result.artist + ' - ' + result.track
+                + '</td>'
+            + '</tr>'
+            + '<tr' + row_tag_contents + '>'
+                + '<td style=" padding: 0 2px 7px 2px; text-align: right;">' + score + '</td>'
+                + '<td style="width: 100px; padding: 0 3px 7px 3px;">' + result.source + '</td>'
+                + '<td style="width: 35px; padding: 0 0 7px 0">' + Playdar.mmss(result.duration) + '</td>'
+                + '<td style="width: 50px; padding: 0 0 7px 0; text-align: right;">' + result.bitrate + 'Kbps</td>'
+            + '</tr>';
+        return row;
     }
 };
 

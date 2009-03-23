@@ -149,7 +149,7 @@ Playdar.prototype = {
             if (this.manual_auth) {
                 var input_id = "manualAuth_" + this.uuid;
                 message = '<input type="text" id="' + input_id + '" />'
-                    + ' <input type="submit" value="Auth" onclick="'
+                    + ' <input type="submit" value="Allow access to Playdar" onclick="'
                         + this.jsonp_callback('manual_auth_callback') + '(\'' + input_id + '\');'
                         + 'return false;'
                     + '" />';

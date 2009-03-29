@@ -729,7 +729,7 @@ Playdar.prototype = {
     nowplaying_query_button: null,
     querylist_click_handler: function (e) {
         var target = Playdar.getTarget(e);
-        while (target.parentNode) {
+        while (target && target.parentNode) {
             if (target.nodeName == 'A' && target.className == 'playdar_query') {
                 if (target.nextSibling.style.display == "none") {
                     this.expand_querylist_result(target);

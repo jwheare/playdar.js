@@ -269,6 +269,20 @@ Playdar.prototype = {
     pending_count: 0,
     success_count: 0,
     poll_counts: {},
+    /**
+     * A FIFO queue of resolution params that have been requested which is
+     * munched when ping_resolution_queue is called when an item has
+     * been added or when a resolve final_answer has bee received.
+     */
+    resolution_queue: $A([]),
+    /**
+     * Counts how many resolutions are currently in progress
+     */
+    processing_resolution_queue: 0,
+    /**
+     * How many concurrent resolutions should we do?
+     */
+    resolution_queue_size: 1,
     resolve: function (art, alb, trk, qid) {
         params = {
             artist: art,
@@ -279,7 +293,23 @@ Playdar.prototype = {
             params.qid = qid;
         }
         this.increment_requests();
-        Playdar.loadjs(this.get_url("resolve", "handle_resolution", params));
+        
+        this.resolution_queue.push(params);
+        this.ping_resolution_queue();
+    },
+    ping_resolution_queue: function() {
+        if(this.processing_resolution_queue < this.resolution_queue_size) {
+            var upto = this.resolution_queue_size
+                      -this.processing_resolution_queue;
+            for(var i=1; i<=upto; i++) {
+                var params = this.resolution_queue.shift();
+                if(!params) {
+                    break;
+                }
+                this.processing_resolution_queue++;
+                Playdar.loadjs(this.get_url("resolve", "handle_resolution", params));
+            }
+        }
     },
     handle_resolution: function (response) {
         this.last_qid = response.qid;
@@ -362,6 +392,10 @@ Playdar.prototype = {
         } else {
             // fall back to standard handler
             this.handlers.results(response, final_answer);
+        }
+        if(final_answer) {
+            this.processing_resolution_queue--;
+            this.ping_resolution_queue();
         }
     },
     get_last_results: function () {

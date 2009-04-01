@@ -437,15 +437,18 @@ Playdar.prototype = {
             that.playhead.style.width = Math.round(portion_played*that.progress_bar_width) + "px";
         };
         options.whileloading = function () {
-            if(!this.firstBytesLoadedValue) {
+            if((!this.firstBytesLoadedValue || this.bytesLoaded==this.previousBytesLoadedValue) && (this.bytesLoaded!=this.bytesTotal || (this.bytesTotal==0 && this.bytesLoaded==0))) {
                 // check for firstBytesLoadedValue since some streams
                 // don't start at 0 but still fail.
                 this.firstBytesLoadedValue = this.bytesLoaded;
+                var bytesLoaded = this.bytesLoaded;
+                var bytesTotal = this.bytesTotal;
                 // Setup a time delay to try and to figure
                 // out if we've got a stream failure.
                 var thisSound = this;
                 setTimeout(function() {
-                    if(thisSound.bytesLoaded==thisSound.firstBytesLoadedValue) {
+                    //if it's still at the same point
+                    if(thisSound.bytesLoaded==bytesLoaded && thisSound.bytesTotal==thisSound.bytesTotal) {
                         thisSound.stop();
                         if(options.onstreamfailure) {
                             options.onstreamfailure();
@@ -456,7 +459,8 @@ Playdar.prototype = {
                 // Update the loading progress bar
                 var buffered = this.bytesLoaded/this.bytesTotal;
                 that.bufferhead.style.width = Math.round(buffered*that.progress_bar_width) + "px";
-            }
+            }    
+            this.previousBytesLoadedValue = this.bytesLoaded;
         };
         var sound = this.soundmanager.createSound(options);
         return sound;

@@ -274,7 +274,7 @@ Playdar.prototype = {
      * munched when ping_resolution_queue is called when an item has
      * been added or when a resolve final_answer has bee received.
      */
-    resolution_queue: $A([]),
+    resolution_queue: [],
     /**
      * Counts how many resolutions are currently in progress
      */
@@ -282,7 +282,7 @@ Playdar.prototype = {
     /**
      * How many concurrent resolutions should we do?
      */
-    resolution_queue_size: 1,
+    resolution_queue_size: 5,
     resolve: function (art, alb, trk, qid) {
         params = {
             artist: art,
@@ -437,9 +437,24 @@ Playdar.prototype = {
             that.playhead.style.width = Math.round(portion_played*that.progress_bar_width) + "px";
         };
         options.whileloading = function () {
-            // Update the loading progress bar
-            var buffered = this.bytesLoaded/this.bytesTotal;
-            that.bufferhead.style.width = Math.round(buffered*that.progress_bar_width) + "px";
+            if(this.bytesLoaded==0 && this.bytesTotal==0) {
+                // Dunno if bytesTotal is allowed to be zero.
+                // Setup a time delay to try and to figure
+                // out if we've got a stream failure.
+                var thisSound = this;
+                setTimeout(function() {
+                    if(thisSound.bytesLoaded==0 && thisSound.bytesTotal==0) {
+                        thisSound.stop();
+                        if(options.onstreamfailure) {
+                            options.onstreamfailure();
+                        }
+                    }
+                }, 4000);
+            } else {
+                // Update the loading progress bar
+                var buffered = this.bytesLoaded/this.bytesTotal;
+                that.bufferhead.style.width = Math.round(buffered*that.progress_bar_width) + "px";
+            }
         };
         var sound = this.soundmanager.createSound(options);
         return sound;

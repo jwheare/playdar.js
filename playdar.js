@@ -701,7 +701,9 @@ Playdar.prototype = {
         this.session_track_list.style.display = "none";
         // - Toggle query results
         var that = this;
-        this.track_list_body.onclick = function (e) { return that.querylist_click_handler.call(that, e); };
+        this.track_list_body.onclick = function (e) {
+            return that.querylist_click_handler.call(that, e);
+        };
         
         this.track_list_body.appendChild(this.session_track_list);
         this.track_list_body.appendChild(this.track_list);
@@ -727,16 +729,10 @@ Playdar.prototype = {
     nowplaying_query_button: null,
     querylist_click_handler: function (e) {
         var target = Playdar.getTarget(e);
-        while (target.parentNode) {
+        while (target && target.parentNode) {
             if (target.nodeName == 'A' && target.className == 'playdar_query') {
                 if (target.nextSibling.style.display == "none") {
-                    this.hide_querylist_results();
-                    this.query_list_link = target;
-                    var url_root = this.get_base_url("/queries/");
-                    var qid = target.href.replace(url_root, '');
-                    if (qid) {
-                        this.get_querylist_results(qid);
-                    }
+                    this.expand_querylist_result(target);
                 } else {
                     this.query_list_link = target;
                     this.hide_querylist_results();
@@ -757,6 +753,15 @@ Playdar.prototype = {
                 this.play_stream(sid);
             }
             target = target.parentNode;
+        }
+    },
+    expand_querylist_result: function (target) {
+        this.hide_querylist_results();
+        this.query_list_link = target;
+        var url_root = this.get_base_url("/queries/");
+        var qid = target.href.replace(url_root, '');
+        if (qid) {
+            this.get_querylist_results(qid);
         }
     },
     hide_querylist_results: function () {
@@ -786,6 +791,7 @@ Playdar.prototype = {
                     result_table += '</table>';
                     querylist_results.innerHTML = result_table;
                     
+                    // Show correct play button
                     if (this.nowplayingid) {
                         var cells = querylist_results.getElementsByTagName('td');
                         for (var i = 0; i < cells.length; i++) {

@@ -5,17 +5,18 @@ Playdar = function (auth_details, handlers) {
     this.register_handlers(Playdar.DefaultHandlers);
     this.register_handlers(handlers);
     // Register the instance
-    this.uuid = Playdar.generate_uuid();
-    Playdar.last = this;
-    Playdar.instances[this.uuid] = Playdar.last;
+    this.uuid = Playdar.Util.generate_uuid();
+    Playdar.client = this;
+    Playdar.instances[this.uuid] = Playdar.client;
 };
 
-Playdar.last = null;
+Playdar.client = null;
 Playdar.instances = {};
 Playdar.create = function (auth_details, handlers) {
     return new Playdar(auth_details, handlers);
 };
 
+Playdar.nowplayingid = null;
 Playdar.status_bar = null;
 
 Playdar.DefaultHandlers = {
@@ -52,7 +53,6 @@ Playdar.prototype = {
     server_port: "8888",
     stat_timeout: 2000,
     web_host: "http://www.playdar.org",
-    progress_bar_width: 200,
     auth_popup_name: "PD_auth",
     auth_popup_size: {
         'w': 500,
@@ -91,7 +91,7 @@ Playdar.prototype = {
     auth_token: false,
     init: function () {
         if (!this.auth_token) {
-            this.auth_token = Playdar.getcookie('auth');
+            this.auth_token = Playdar.Util.getcookie('auth');
         }
         this.stat();
     },
@@ -102,7 +102,7 @@ Playdar.prototype = {
         setTimeout(function () {
             that.check_stat_timeout();
         }, this.stat_timeout);
-        Playdar.loadjs(this.get_url("stat", "handle_stat"));
+        Playdar.Util.loadjs(this.get_url("stat", "handle_stat"));
     },
     check_stat_timeout: function () {
         if (!this.stat_response || this.stat_response.name != "playdar") {
@@ -122,30 +122,30 @@ Playdar.prototype = {
     },
     clear_auth: function () {
         this.stop_all();
-        Playdar.loadjs(this.get_revoke_url());
+        Playdar.Util.loadjs(this.get_revoke_url());
         this.auth_token = false;
-        Playdar.deletecookie('auth');
+        Playdar.Util.deletecookie('auth');
         this.update_status_bar();
         this.handlers.clear_auth();
     },
     get_revoke_url: function () {
-        return this.get_base_url("/auth/?" + Playdar.toQueryString({
+        return this.get_base_url("/auth/?" + Playdar.Util.toQueryString({
             revoke: this.auth_token
         }));
     },
     update_status_bar: function () {
         if (!Playdar.status_bar) {
-            Playdar.status_bar = this.build_status_bar();
+            Playdar.status_bar = new Playdar.StatusBar(this);
         }
         var message;
         if (this.auth_token) {
-            this.disconnect_link.style.display = "";
-            this.track_list_container.style.display = "";
+            Playdar.status_bar.disconnect_link.style.display = "";
+            Playdar.status_bar.track_list_container.style.display = "";
             this.load_tracks();
             message = "Ready";
         } else {
-            this.disconnect_link.style.display = "none";
-            this.track_list_container.style.display = "none";
+            Playdar.status_bar.disconnect_link.style.display = "none";
+            Playdar.status_bar.track_list_container.style.display = "none";
             if (this.manual_auth) {
                 var input_id = "manualAuth_" + this.uuid;
                 message = '<input type="text" id="' + input_id + '" />'
@@ -162,10 +162,10 @@ Playdar.prototype = {
                     + '">Connect</a>';
             }
         }
-        this.status.innerHTML = message;
+        Playdar.status_bar.status.innerHTML = message;
     },
     load_tracks: function () {
-        Playdar.loadjs(this.get_url("list_queries", "handle_queries"));
+        Playdar.Util.loadjs(this.get_url("list_queries", "handle_queries"));
     },
     handle_queries: function (response) {
         var list_items = "";
@@ -173,7 +173,7 @@ Playdar.prototype = {
             var li = this.build_track_list_item(response.queries[i]);
             list_items += li;
         }
-        this.track_list.innerHTML = list_items;
+        Playdar.status_bar.track_list.innerHTML = list_items;
     },
     build_track_list_item: function (response) {
         var color = response.query.solved ? 'fff' : 'cbdab1';
@@ -201,7 +201,7 @@ Playdar.prototype = {
         return li;
     },
     get_auth_url: function () {
-        return this.get_base_url("/auth_1/?" + Playdar.toQueryString(this.auth_details));
+        return this.get_base_url("/auth_1/?" + Playdar.Util.toQueryString(this.auth_details));
     },
     auth_popup: null,
     manual_auth: false,
@@ -237,8 +237,8 @@ Playdar.prototype = {
         ].join(',');
     },
     get_auth_popup_location: function () {
-        var window_location = Playdar.get_window_location();
-        var window_size = Playdar.get_window_size();
+        var window_location = Playdar.Util.get_window_location();
+        var window_size = Playdar.Util.get_window_size();
         return {
             'x': Math.max(0, window_location.x + (window_size.w - this.auth_popup_size.w) / 2),
             'y': Math.max(0, window_location.y + (window_size.h - this.auth_popup_size.h) / 2)
@@ -246,7 +246,7 @@ Playdar.prototype = {
     },
     
     auth_callback: function (token) {
-        Playdar.setcookie('auth', token, 365);
+        Playdar.Util.setcookie('auth', token, 365);
         if (this.auth_popup !== null && !this.auth_popup.closed) {
             this.auth_popup.close();
         }
@@ -302,7 +302,7 @@ Playdar.prototype = {
                 break;
             }
             this.resolutions_in_progress++;
-            Playdar.loadjs(this.get_url("resolve", "handle_resolution", query));
+            Playdar.Util.loadjs(this.get_url("resolve", "handle_resolution", query));
         }
     },
     handle_resolution: function (response) {
@@ -316,28 +316,30 @@ Playdar.prototype = {
         this.show_resolution_status();
     },
     show_resolution_status: function () {
-        if (this.query_count) {
+        if (Playdar.status_bar.query_count) {
             var status = " " + this.success_count + "/" + this.request_count;
             if (this.pending_count) {
                 status += ' <img src="' + this.web_host + '/static/track_throbber.gif" width="16" height="16" style="vertical-align: middle; margin: -2px 2px 0 2px"/> ' + this.pending_count;
             }
-            this.query_count.innerHTML = status;
+            Playdar.status_bar.query_count.innerHTML = status;
         }
     },
     
     // poll results for a query id
     get_results: function (qid) {
-        Playdar.loadjs(this.get_url("get_results", "handle_results", {
+        Playdar.Util.loadjs(this.get_url("get_results", "handle_results", {
             qid: qid
         }));
     },
-    poll_results: function (response, callback) {
+    poll_results: function (response, callback, context) {
         // figure out if we should re-poll, or if the query is solved/failed:
         var final_answer = this.should_stop_polling(response);
-        var that = this;
+        if (!context) {
+            context = this;
+        }
         if (!final_answer) {
             setTimeout(function () {
-                callback.call(that, response.qid);
+                callback.call(context, response.qid);
             }, response.refresh_interval);
         }
         return final_answer;
@@ -350,8 +352,8 @@ Playdar.prototype = {
                 this.success_count++;
             }
             list_item = this.build_track_list_item(response);
-            this.session_track_list.innerHTML = list_item + this.session_track_list.innerHTML;
-            this.session_track_list.style.display = "";
+            Playdar.status_bar.session_track_list.innerHTML = list_item + Playdar.status_bar.session_track_list.innerHTML;
+            Playdar.status_bar.session_track_list.style.display = "";
         }
         this.show_resolution_status();
         
@@ -403,7 +405,6 @@ Playdar.prototype = {
     // SOUNDMANAGER 2 WRAPPERS
     
     results: {},
-    nowplayingid: null,
     register_stream: function (result, options) {
         if (!this.soundmanager) {
             return false;
@@ -420,7 +421,7 @@ Playdar.prototype = {
         var that = this;
         options.whileplaying = function () {
             // Update the track progress
-            that.track_elapsed.innerHTML = Playdar.mmss(Math.round(this.position/1000));
+            Playdar.status_bar.track_elapsed.innerHTML = Playdar.Util.mmss(Math.round(this.position/1000));
             // Update the playback progress bar
             var duration;
             if (this.readyState == 3) { // loaded/success
@@ -429,7 +430,7 @@ Playdar.prototype = {
                 duration = this.durationEstimate;
             }
             var portion_played = this.position/duration;
-            that.playhead.style.width = Math.round(portion_played*that.progress_bar_width) + "px";
+            Playdar.status_bar.playhead.style.width = Math.round(portion_played*Playdar.status_bar.progress_bar_width) + "px";
         };
         options.whileloading = function () {
             if ((!this.firstBytesLoadedValue || this.bytesLoaded == this.previousBytesLoadedValue)
@@ -455,7 +456,7 @@ Playdar.prototype = {
             } else {
                 // Update the loading progress bar
                 var buffered = this.bytesLoaded/this.bytesTotal;
-                that.bufferhead.style.width = Math.round(buffered*that.progress_bar_width) + "px";
+                Playdar.status_bar.bufferhead.style.width = Math.round(buffered*Playdar.status_bar.progress_bar_width) + "px";
             }
             this.previousBytesLoadedValue = this.bytesLoaded;
         };
@@ -467,23 +468,23 @@ Playdar.prototype = {
             return false;
         }
         var sound = this.soundmanager.getSoundById(sid);
-        if (this.nowplayingid != sid) {
+        if (Playdar.nowplayingid != sid) {
             this.stop_all();
             if (sound.playState == 0) {
                 // Initialise the track progress
-                this.track_elapsed.innerHTML = Playdar.mmss(0);
+                Playdar.status_bar.track_elapsed.innerHTML = Playdar.Util.mmss(0);
                 // Update the track link
-                this.track_link.href = this.get_stream_url(this.results[sid].sid);
-                this.track_link.title = this.results[sid].source;
-                this.track_name.innerHTML = this.results[sid].track;
-                this.artist_name.innerHTML = this.results[sid].artist;
+                Playdar.status_bar.track_link.href = this.get_stream_url(this.results[sid].sid);
+                Playdar.status_bar.track_link.title = this.results[sid].source;
+                Playdar.status_bar.track_name.innerHTML = this.results[sid].track;
+                Playdar.status_bar.artist_name.innerHTML = this.results[sid].artist;
                 // Update the track duration
-                this.track_duration.innerHTML = Playdar.mmss(this.results[sid].duration);
+                Playdar.status_bar.track_duration.innerHTML = Playdar.Util.mmss(this.results[sid].duration);
                 // Show progress bar
-                this.status.style.display = "none";
-                this.playback.style.display = "";
+                Playdar.status_bar.status.style.display = "none";
+                Playdar.status_bar.playback.style.display = "";
                 
-                this.nowplayingid = sid;
+                Playdar.nowplayingid = sid;
             }
         }
         
@@ -491,20 +492,20 @@ Playdar.prototype = {
         return sound;
     },
     stop_all: function () {
-        if (this.soundmanager && this.nowplayingid) {
-            var sound = this.soundmanager.getSoundById(this.nowplayingid);
+        if (this.soundmanager && Playdar.nowplayingid) {
+            var sound = this.soundmanager.getSoundById(Playdar.nowplayingid);
             sound.stop();
             sound.setPosition(1);
-            this.nowplayingid = null;
+            Playdar.nowplayingid = null;
         }
         
-        this.playback.style.display = "none";
-        this.status.style.display = "";
+        Playdar.status_bar.playback.style.display = "none";
+        Playdar.status_bar.status.style.display = "";
         
-        this.track_link.href = "#";
-        this.track_link.title = "";
-        this.track_name.innerHTML = "";
-        this.artist_name.innerHTML = "";
+        Playdar.status_bar.track_link.href = "#";
+        Playdar.status_bar.track_link.title = "";
+        Playdar.status_bar.track_name.innerHTML = "";
+        Playdar.status_bar.artist_name.innerHTML = "";
     },
     
     // UTILITY FUNCTIONS
@@ -523,11 +524,13 @@ Playdar.prototype = {
             options = {};
         }
         options.method = method;
-        options.jsonp = this.jsonp_callback(jsonp);
+        if (!options.jsonp) {
+            options.jsonp = this.jsonp_callback(jsonp);
+        }
         if (this.auth_token) {
             options.auth = this.auth_token;
         }
-        return this.get_base_url("/api/?" + Playdar.toQueryString(options));
+        return this.get_base_url("/api/?" + Playdar.Util.toQueryString(options));
     },
     
     // turn a source id into a stream url
@@ -537,18 +540,23 @@ Playdar.prototype = {
     
     // build the jsonp callback string
     jsonp_callback: function (callback) {
-        return "Playdar.instances['" + this.uuid + "']." + callback;
+        return "Playdar.client." + callback;
     },
     
     list_results: function (response) {
         for (var i = 0; i < response.results.length; i++) {
             console.log(response.results[i].name);
         }
-    },
-    
-    // STATUS BAR
-    query_list_link: null,
-    build_status_bar: function () {
+    }
+};
+
+Playdar.StatusBar = function (playdar) {
+    this.playdar = playdar;
+    this.build();
+};
+Playdar.StatusBar.prototype = {
+    progress_bar_width: 200,
+    build: function () {
         /* Status bar
            ---------- */
         var status_bar = document.createElement("div");
@@ -569,7 +577,7 @@ Playdar.prototype = {
         var left_col = document.createElement("div");
         left_col.style.padding = "0 7px";
         // Logo
-        var logo = '<img src="' + this.web_host + '/static/playdar_logo_32x32.png" width="32" height="32" style="vertical-align: middle; float: left; margin: 0 10px 0 0; border: 0; line-height: 36px;" />';
+        var logo = '<img src="' + this.playdar.web_host + '/static/playdar_logo_32x32.png" width="32" height="32" style="vertical-align: middle; float: left; margin: 0 10px 0 0; border: 0; line-height: 36px;" />';
         left_col.innerHTML = logo;
         
         // - Status message
@@ -644,8 +652,8 @@ Playdar.prototype = {
         // Click to toggle pause
         var that = this;
         progress_bar.onclick = function () {
-            if (that.nowplayingid) {
-                that.play_stream(that.nowplayingid);
+            if (Playdar.nowplayingid) {
+                that.playdar.play_stream(Playdar.nowplayingid);
             }
         };
         progress_cell.appendChild(progress_bar);
@@ -670,13 +678,13 @@ Playdar.prototype = {
         // Settings link
         var settings_link = document.createElement("p");
         settings_link.style.margin = 0;
-        settings_link.innerHTML = '<a href="' + this.get_base_url() + '" target="_blank">Settings</a>';
+        settings_link.innerHTML = '<a href="' + this.playdar.get_base_url() + '" target="_blank">Settings</a>';
         right_col.appendChild(settings_link);
         // - Disconnect link
         this.disconnect_link = document.createElement("p");
         this.disconnect_link.style.margin = 0;
         this.disconnect_link.innerHTML = '<a href="#" onclick="'
-            + this.jsonp_callback('clear_auth') + '();'
+            + this.playdar.jsonp_callback('clear_auth') + '();'
             + 'return false;'
             + '">Disconnect</a>';
         right_col.appendChild(this.disconnect_link);
@@ -778,9 +786,10 @@ Playdar.prototype = {
         
         return status_bar;
     },
+    query_list_link: null,
     nowplaying_query_button: null,
     querylist_click_handler: function (e) {
-        var target = Playdar.getTarget(e);
+        var target = Playdar.Util.getTarget(e);
         while (target && target.parentNode) {
             if (target.nodeName == 'A' && target.className == 'playdar_query') {
                 if (target.nextSibling.style.display == "none") {
@@ -802,7 +811,7 @@ Playdar.prototype = {
                     this.nowplaying_query_button = target.previousSibling.firstChild.firstChild;
                 }
                 this.nowplaying_query_button.style.visibility = 'visible';
-                this.play_stream(sid);
+                this.playdar.play_stream(sid);
             }
             target = target.parentNode;
         }
@@ -810,7 +819,7 @@ Playdar.prototype = {
     expand_querylist_result: function (target) {
         this.hide_querylist_results();
         this.query_list_link = target;
-        var url_root = this.get_base_url("/queries/");
+        var url_root = this.playdar.get_base_url("/queries/");
         var qid = target.href.replace(url_root, '');
         if (qid) {
             this.get_querylist_results(qid);
@@ -824,13 +833,14 @@ Playdar.prototype = {
         }
     },
     get_querylist_results: function (qid) {
-        Playdar.loadjs(this.get_url("get_results", "show_querylist_results", {
-            qid: qid
+        Playdar.Util.loadjs(this.playdar.get_url("get_results", "show_querylist_results", {
+            qid: qid,
+            jsonp: 'Playdar.status_bar.show_querylist_results'
         }));
     },
     show_querylist_results: function (response) {
         if (this.query_list_link) {
-            var final_answer = this.poll_results(response, this.get_querylist_results);
+            var final_answer = this.playdar.poll_results(response, this.get_querylist_results, this);
             var querylist_results = this.query_list_link.nextSibling;
             if (final_answer) {
                 if (response.results.length) {
@@ -844,13 +854,13 @@ Playdar.prototype = {
                     querylist_results.innerHTML = result_table;
                     
                     // Show correct play button
-                    if (this.nowplayingid) {
+                    if (Playdar.nowplayingid) {
                         var cells = querylist_results.getElementsByTagName('td');
                         for (var i = 0; i < cells.length; i++) {
                             var cell = cells[i];
                             if (cell.className == 'playdar_play') {
                                 var sid = cell.parentNode.className.replace('sid_', '');
-                                if (this.nowplayingid == sid) {
+                                if (Playdar.nowplayingid == sid) {
                                     this.nowplaying_query_button = cell.firstChild;
                                     this.nowplaying_query_button.style.visibility = 'visible';
                                 }
@@ -869,7 +879,7 @@ Playdar.prototype = {
         }
     },
     build_querylist_result_table: function (result, i) {
-        var sound = this.register_stream(result);
+        var sound = this.playdar.register_stream(result);
         var row_tag_contents = ' class="sid_' + result.sid + '"';
         var border = '';
         if (i > 0) {
@@ -898,151 +908,153 @@ Playdar.prototype = {
             + '<tr' + row_tag_contents + '>'
                 + '<td style=" padding: 0 2px 7px 2px; text-align: right;">' + score + '</td>'
                 + '<td style="width: 100px; padding: 0 3px 7px 3px;">' + result.source + '</td>'
-                + '<td style="width: 35px; padding: 0 0 7px 0">' + Playdar.mmss(result.duration) + '</td>'
+                + '<td style="width: 35px; padding: 0 0 7px 0">' + Playdar.Util.mmss(result.duration) + '</td>'
                 + '<td style="width: 50px; padding: 0 0 7px 0; text-align: right;">' + result.bitrate + 'Kbps</td>'
             + '</tr>';
         return row;
     }
 };
 
-/*
-Based on: Math.uuid.js
-Version: 1.3
-Latest version:   http://www.broofa.com/Tools/Math.uuid.js
-Information:      http://www.broofa.com/blog/?p=151
-Contact:          robert@broofa.com
-----
-Copyright (c) 2008, Robert Kieffer
-All rights reserved.
-
-Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
-
-    * Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
-    * Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
-    * Neither the name of Robert Kieffer nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-*/
-Playdar.generate_uuid = function () {
-    // Private array of chars to use
-    var chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'.split('');
-    var uuid = [];
-    var rnd = Math.random;
+Playdar.Util = {
+    /*
+    Based on: Math.uuid.js
+    Version: 1.3
+    Latest version:   http://www.broofa.com/Tools/Math.uuid.js
+    Information:      http://www.broofa.com/blog/?p=151
+    Contact:          robert@broofa.com
+    ----
+    Copyright (c) 2008, Robert Kieffer
+    All rights reserved.
     
-    // rfc4122, version 4 form
-    var r;
+    Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
     
-    // rfc4122 requires these characters
-    uuid[8] = uuid[13] = uuid[18] = uuid[23] = '-';
-    uuid[14] = '4';
+        * Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+        * Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+        * Neither the name of Robert Kieffer nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
     
-    // Fill in random data.  At i==19 set the high bits of clock sequence as
-    // per rfc4122, sec. 4.1.5
-    for (var i = 0; i < 36; i++) {
-        if (!uuid[i]) {
-            r = 0 | rnd()*16;
-            uuid[i] = chars[(i == 19) ? (r & 0x3) | 0x8 : r & 0xf];
-        }
-    }
-    return uuid.join('');
-};
-
-// Query string helper
-Playdar.toQueryPair = function (key, value) {
-    if (value === null) {
-        return key;
-    }
-    return key + '=' + encodeURIComponent(value);
-};
-Playdar.toQueryString = function (params) {
-    var results = [];
-    for (key in params) {
-        var values = params[key];
-        key = encodeURIComponent(key);
+    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+    */
+    generate_uuid: function () {
+        // Private array of chars to use
+        var chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'.split('');
+        var uuid = [];
+        var rnd = Math.random;
         
-        if (Object.prototype.toString.call(values) == '[object Array]') {
-            for (i = 0; i < values.length; i++) {
-                results.push(Playdar.toQueryPair(key, values[i]));
+        // rfc4122, version 4 form
+        var r;
+        
+        // rfc4122 requires these characters
+        uuid[8] = uuid[13] = uuid[18] = uuid[23] = '-';
+        uuid[14] = '4';
+        
+        // Fill in random data.  At i==19 set the high bits of clock sequence as
+        // per rfc4122, sec. 4.1.5
+        for (var i = 0; i < 36; i++) {
+            if (!uuid[i]) {
+                r = 0 | rnd()*16;
+                uuid[i] = chars[(i == 19) ? (r & 0x3) | 0x8 : r & 0xf];
             }
+        }
+        return uuid.join('');
+    },
+    
+    // Query string helpers
+    toQueryPair: function (key, value) {
+        if (value === null) {
+            return key;
+        }
+        return key + '=' + encodeURIComponent(value);
+    },
+    toQueryString: function (params) {
+        var results = [];
+        for (key in params) {
+            var values = params[key];
+            key = encodeURIComponent(key);
+            
+            if (Object.prototype.toString.call(values) == '[object Array]') {
+                for (i = 0; i < values.length; i++) {
+                    results.push(Playdar.Util.toQueryPair(key, values[i]));
+                }
+            } else {
+                results.push(Playdar.Util.toQueryPair(key, values));
+            }
+        }
+        return results.join('&');
+    },
+    
+    // format secs -> mm:ss helper.
+    mmss: function (secs) {
+        var s = secs % 60;
+        if (s < 10) {
+            s = "0" + s;
+        }
+        return Math.floor(secs/60) + ":" + s;
+    },
+    
+    // JSON loader
+    loadjs: function (url) {
+       var s = document.createElement("script");
+       s.src = url;
+       document.getElementsByTagName("head")[0].appendChild(s);
+    },
+    
+    // Cookie helpers
+    setcookie: function (name, value, days) {
+        if (days) {
+            var date = new Date();
+            date.setTime(date.getTime() + (days*24*60*60*1000));
+            var expires = "; expires=" + date.toGMTString();
         } else {
-            results.push(Playdar.toQueryPair(key, values));
+            var expires = "";
         }
-    }
-    return results.join('&');
-};
-
-// format secs -> mm:ss helper.
-Playdar.mmss = function (secs) {
-    var s = secs % 60;
-    if (s < 10) {
-        s = "0" + s;
-    }
-    return Math.floor(secs/60) + ":" + s;
-};
-
-// JSON loader
-Playdar.loadjs = function (url) {
-   var s = document.createElement("script");
-   s.src = url;
-   document.getElementsByTagName("head")[0].appendChild(s);
-};
-
-// Cookie helpers
-Playdar.setcookie = function (name, value, days) {
-    if (days) {
-        var date = new Date();
-        date.setTime(date.getTime() + (days*24*60*60*1000));
-        var expires = "; expires=" + date.toGMTString();
-    } else {
-        var expires = "";
-    }
-    document.cookie = "PD_" + name + "=" + value + expires + "; path=/";
-};
-Playdar.getcookie = function (name) {
-    var namekey = "PD_" + name + "=";
-    var cookies = document.cookie.split(';');
-    for (var i = 0; i < cookies.length;i++) {
-        var c = cookies[i];
-        while (c.charAt(0) == ' ') {
-            c = c.substring(1, c.length);
+        document.cookie = "PD_" + name + "=" + value + expires + "; path=/";
+    },
+    getcookie: function (name) {
+        var namekey = "PD_" + name + "=";
+        var cookies = document.cookie.split(';');
+        for (var i = 0; i < cookies.length;i++) {
+            var c = cookies[i];
+            while (c.charAt(0) == ' ') {
+                c = c.substring(1, c.length);
+            }
+            if (c.indexOf(namekey) == 0) {
+                return c.substring(namekey.length, c.length);
+            }
         }
-        if (c.indexOf(namekey) == 0) {
-            return c.substring(namekey.length, c.length);
+        return null;
+    },
+    deletecookie: function (name) {
+        Playdar.Util.setcookie(name, "", -1);
+    },
+    
+    // Window dimension/position helpers
+    get_window_location: function () {
+        var location = {};
+        if (window.screenLeft) {
+            location.x = window.screenLeft || 0;
+            location.y = window.screenTop || 0;
+        } else {
+            location.x = window.screenX || 0;
+            location.y = window.screenY || 0;
         }
+        return location;
+    },
+    get_window_size: function () {
+        return {
+            'w': (window && window.innerWidth) || 
+                 (document && document.documentElement && document.documentElement.clientWidth) || 
+                 (document && document.body && document.body.clientWidth) || 
+                 0,
+            'h': (window && window.innerHeight) || 
+                 (document && document.documentElement && document.documentElement.clientHeight) || 
+                 (document && document.body && document.body.clientHeight) || 
+                 0
+        };
+    },
+    
+    // Event target helper
+    getTarget: function (e) {
+        e = e || window.event;
+        return e.target || e.srcElement;
     }
-    return null;
-};
-Playdar.deletecookie = function (name) {
-    Playdar.setcookie(name, "", -1);
-};
-
-// Window dimension/position helpers
-Playdar.get_window_location = function () {
-    var location = {};
-    if (window.screenLeft) {
-        location.x = window.screenLeft || 0;
-        location.y = window.screenTop || 0;
-    } else {
-        location.x = window.screenX || 0;
-        location.y = window.screenY || 0;
-    }
-    return location;
-};
-Playdar.get_window_size = function () {
-    return {
-        'w': (window && window.innerWidth) || 
-             (document && document.documentElement && document.documentElement.clientWidth) || 
-             (document && document.body && document.body.clientWidth) || 
-             0,
-        'h': (window && window.innerHeight) || 
-             (document && document.documentElement && document.documentElement.clientHeight) || 
-             (document && document.body && document.body.clientHeight) || 
-             0
-    };
-};
-
-// Event target helper
-Playdar.getTarget = function (e) {
-    e = e || window.event;
-    return e.target || e.srcElement;
 };

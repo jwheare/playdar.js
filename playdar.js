@@ -269,17 +269,41 @@ Playdar.prototype = {
     pending_count: 0,
     success_count: 0,
     poll_counts: {},
+    /**
+     * A query resolution queue consumed by process_resolution_queue, which is called
+     * each time a final_answer is received from the daemon.
+     */
+    resolution_queue: [],
+    max_concurrent_resolutions: 5,
+    resolutions_in_progress: 0,
+    
     resolve: function (art, alb, trk, qid) {
-        params = {
+        var query = {
             artist: art,
             album: alb,
             track: trk
         };
         if (typeof qid !== 'undefined') {
-            params.qid = qid;
+            query.qid = qid;
         }
         this.increment_requests();
-        Playdar.loadjs(this.get_url("resolve", "handle_resolution", params));
+        
+        this.resolution_queue.push(query);
+        this.process_resolution_queue();
+    },
+    process_resolution_queue: function() {
+        if (this.resolutions_in_progress >= this.max_concurrent_resolutions) {
+            return false;
+        }
+        var available_resolution_slots = this.max_concurrent_resolutions - this.resolutions_in_progress;
+        for (var i = 1; i <= available_resolution_slots; i++) {
+            var query = this.resolution_queue.shift();
+            if (!query) {
+                break;
+            }
+            this.resolutions_in_progress++;
+            Playdar.loadjs(this.get_url("resolve", "handle_resolution", query));
+        }
     },
     handle_resolution: function (response) {
         this.last_qid = response.qid;
@@ -356,6 +380,11 @@ Playdar.prototype = {
         return false;
     },
     call_results_handler: function (response, final_answer) {
+        // Check to see if we can make some more resolve calls
+        if (final_answer) {
+            this.resolutions_in_progress--;
+            this.process_resolution_queue();
+        }
         if (response.qid && this.results_handlers[response.qid]) {
             // try a custom handler registered for this query id
             this.results_handlers[response.qid](response, final_answer);
@@ -403,9 +432,32 @@ Playdar.prototype = {
             that.playhead.style.width = Math.round(portion_played*that.progress_bar_width) + "px";
         };
         options.whileloading = function () {
-            // Update the loading progress bar
-            var buffered = this.bytesLoaded/this.bytesTotal;
-            that.bufferhead.style.width = Math.round(buffered*that.progress_bar_width) + "px";
+            if ((!this.firstBytesLoadedValue || this.bytesLoaded == this.previousBytesLoadedValue)
+             && (this.bytesLoaded != this.bytesTotal || (this.bytesTotal == 0 && this.bytesLoaded == 0))) {
+                // check for firstBytesLoadedValue since some streams
+                // don't start at 0 but still fail.
+                this.firstBytesLoadedValue = this.bytesLoaded;
+                var bytesLoaded = this.bytesLoaded;
+                var bytesTotal = this.bytesTotal;
+                // Setup a time delay to try and to figure
+                // out if we've got a stream failure.
+                var this_sound = this;
+                setTimeout(function() {
+                    // if it's still at the same point
+                    if (this_sound.bytesLoaded == bytesLoaded
+                     && this_sound.bytesTotal == this_sound.bytesTotal) {
+                        this_sound.stop();
+                        if (options.onstreamfailure) {
+                            options.onstreamfailure();
+                        }
+                    }
+                }, 4000);
+            } else {
+                // Update the loading progress bar
+                var buffered = this.bytesLoaded/this.bytesTotal;
+                that.bufferhead.style.width = Math.round(buffered*that.progress_bar_width) + "px";
+            }
+            this.previousBytesLoadedValue = this.bytesLoaded;
         };
         var sound = this.soundmanager.createSound(options);
         return sound;

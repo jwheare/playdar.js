@@ -951,6 +951,9 @@ Playdar.StatusBar.prototype = {
         this.track_link.title = "";
         this.track_name.innerHTML = "";
         this.artist_name.innerHTML = "";
+        
+        this.bufferhead.style.width = 0;
+        this.playhead.style.width = 0;
     }
 };
 

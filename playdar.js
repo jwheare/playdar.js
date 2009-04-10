@@ -2,7 +2,7 @@ Playdar = {
     VERSION: "0.4",
     SERVER_ROOT: "localhost",
     SERVER_PORT: "8888",
-    WEB_HOST: "http://www.playdar.org",
+    STATIC_HOST: "http://www.playdar.org",
     STAT_TIMEOUT: 2000,
     AUTH_POPUP_NAME: "PD_auth",
     AUTH_POPUP_SIZE: {
@@ -10,32 +10,31 @@ Playdar = {
         'h': 260
     },
     MAX_CONCURRENT_RESOLUTIONS: 50,
+    USE_STATUS_BAR: true,
     
     client: null,
     status_bar: null,
     player: null,
-    setup: function (auth_details, handlers) {
-        Playdar.client = new Playdar.Client(auth_details, handlers);
-        Playdar.player = new Playdar.Player();
-        Playdar.status_bar = new Playdar.StatusBar();
+    setup: function (auth_details) {
+        Playdar.client = new Playdar.Client(auth_details);
     }
 };
 
-Playdar.DefaultHandlers = {
-    auth: function () {
-        // Playdar authorised
-    },
-    clear_auth: function () {
-        // Playdar deauthorised
-    },
-    stat: function (detected) {
+Playdar.DefaultListeners = {
+    onStat: function (detected) {
         if (detected) {
             // Playdar detected
         } else {
             // Playdar not found
         }
     },
-    results: function (response, final_answer) {
+    onAuth: function () {
+        // Playdar authorised
+    },
+    onAuthClear: function () {
+        // Playdar deauthorised
+    },
+    onResults: function (response, final_answer) {
         if (final_answer) {
             if (response.results.length) {
                 // Found results
@@ -48,11 +47,11 @@ Playdar.DefaultHandlers = {
     }
 };
 
-Playdar.Client = function (auth_details, handlers) {
+Playdar.Client = function (auth_details, listeners) {
     this.auth_token = false;
     this.auth_popup = null;
     
-    this.handlers = {};
+    this.listeners = {};
     this.results_handlers = {};
     
     this.resolve_qids = [];
@@ -68,25 +67,25 @@ Playdar.Client = function (auth_details, handlers) {
     
     // Setup auth
     this.auth_details = auth_details;
-    // Setup handlers
-    this.register_handlers(Playdar.DefaultHandlers);
-    this.register_handlers(handlers);
+    // Setup listeners
+    this.register_listeners(Playdar.DefaultListeners);
+    this.register_listeners(listeners);
     
     this.uuid = Playdar.Util.generate_uuid();
 };
 Playdar.Client.prototype = {
-    register_handler: function (handler_name, callback) {
+    register_listener: function (event, callback) {
         if (!callback) {
             var callback = function () {};
         }
-        this.handlers[handler_name] = function () { return callback.apply(Playdar.client, arguments); };
+        this.listeners[event] = function () { return callback.apply(Playdar.client, arguments); };
     },
-    register_handlers: function (handlers) {
-        if (!handlers) {
+    register_listeners: function (listeners) {
+        if (!listeners) {
             return;
         }
-        for (handler in handlers) {
-            this.register_handler(handler, handlers[handler]);
+        for (event in listeners) {
+            this.register_listener(event, listeners[event]);
         }
         return true;
     },
@@ -95,7 +94,7 @@ Playdar.Client.prototype = {
         if (qid) {
             this.results_handlers[qid] = handler;
         } else {
-            this.register_handler('results', handler);
+            this.register_listener('onResults', handler);
         }
     },
     
@@ -116,13 +115,14 @@ Playdar.Client.prototype = {
     },
     check_stat_timeout: function () {
         if (!this.stat_response || this.stat_response.name != "playdar") {
-            this.handlers.stat(false);
+            this.listeners.onStat(false);
         }
     },
     handle_stat: function (response) {
         this.stat_response = response;
         // Update status bar
-        if (Playdar.status_bar) {
+        if (Playdar.USE_STATUS_BAR) {
+            Playdar.status_bar = new Playdar.StatusBar();
             if (this.auth_token) {
                 Playdar.status_bar.ready();
                 Playdar.status_bar.load_tracks();
@@ -130,24 +130,26 @@ Playdar.Client.prototype = {
                 Playdar.status_bar.offline();
             }
         }
-        this.handlers.stat(true);
+        this.listeners.onStat(true);
         
         if (response.authenticated) {
-            this.handlers.auth();
+            this.listeners.onAuth();
         } else if (this.auth_token) {
             this.clear_auth();
         }
     },
     clear_auth: function () {
         // Stop the music
-        Playdar.player.stop_all();
+        if (Playdar.player) {
+            Playdar.player.stop_all();
+        }
         // Revoke auth at the server
         Playdar.Util.loadjs(this.get_revoke_url());
         // Clear auth token
         this.auth_token = false;
         Playdar.Util.deletecookie('auth');
         // Callback
-        this.handlers.clear_auth();
+        this.listeners.onAuthClear();
         // Update status bar
         if (Playdar.status_bar) {
             Playdar.status_bar.offline();
@@ -291,7 +293,7 @@ Playdar.Client.prototype = {
             this.results_handlers[response.qid](response, final_answer);
         } else {
             // fall back to standard handler
-            this.handlers.results(response, final_answer);
+            this.listeners.onResults(response, final_answer);
         }
     },
     should_stop_polling: function (response) {
@@ -379,17 +381,15 @@ Playdar.Client.prototype = {
     }
 };
 
-Playdar.Player = function () {
+Playdar.Player = function (soundmanager) {
     this.streams = {};
     this.nowplayingid = null;
-    this.soundmanager = null;
+    this.soundmanager = soundmanager;
+    
+    Playdar.player = this;
 };
 Playdar.Player.prototype = {
     register_stream: function (result, options) {
-        if (!this.soundmanager) {
-            return false;
-        }
-        
         // Register result
         this.streams[result.sid] = result;
         
@@ -410,9 +410,6 @@ Playdar.Player.prototype = {
         return this.soundmanager.createSound(options);
     },
     play_stream: function (sid) {
-        if (!this.soundmanager) {
-            return false;
-        }
         var sound = this.soundmanager.getSoundById(sid);
         if (this.nowplayingid != sid) {
             this.stop_all();
@@ -429,9 +426,6 @@ Playdar.Player.prototype = {
         return sound;
     },
     stop_all: function () {
-        if (!this.soundmanager) {
-            return false;
-        }
         if (this.nowplayingid) {
             var sound = this.soundmanager.getSoundById(this.nowplayingid);
             sound.stop();
@@ -484,7 +478,7 @@ Playdar.StatusBar.prototype = {
         var left_col = document.createElement("div");
         left_col.style.padding = "0 7px";
         // Logo
-        var logo = '<img src="' + Playdar.WEB_HOST + '/static/playdar_logo_32x32.png" width="32" height="32" style="vertical-align: middle; float: left; margin: 0 10px 0 0; border: 0; line-height: 36px;" />';
+        var logo = '<img src="' + Playdar.STATIC_HOST + '/static/playdar_logo_32x32.png" width="32" height="32" style="vertical-align: middle; float: left; margin: 0 10px 0 0; border: 0; line-height: 36px;" />';
         left_col.innerHTML = logo;
         
         // - Status message
@@ -777,7 +771,7 @@ Playdar.StatusBar.prototype = {
         if (this.query_count) {
             var status = " " + this.success_count + "/" + this.request_count;
             if (this.pending_count) {
-                status += ' <img src="' + Playdar.WEB_HOST + '/static/track_throbber.gif" width="16" height="16" style="vertical-align: middle; margin: -2px 2px 0 2px"/> ' + this.pending_count;
+                status += ' <img src="' + Playdar.STATIC_HOST + '/static/track_throbber.gif" width="16" height="16" style="vertical-align: middle; margin: -2px 2px 0 2px"/> ' + this.pending_count;
             }
             this.query_count.innerHTML = status;
         }

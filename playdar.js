@@ -221,7 +221,7 @@ Playdar.prototype = {
      * each time a final_answer is received from the daemon.
      */
     resolution_queue: [],
-    max_concurrent_resolutions: 5,
+    max_concurrent_resolutions: 50,
     resolutions_in_progress: 0,
     
     resolve: function (art, alb, trk, qid) {
@@ -401,9 +401,9 @@ Playdar.Player = function () {
 Playdar.Player.prototype = {
     streams: {},
     nowplayingid: null,
+    soundmanager: null,
     register_stream: function (result, options) {
-        // TODO store this elswhere
-        if (!Playdar.client.soundmanager) {
+        if (!this.soundmanager) {
             return false;
         }
         
@@ -429,13 +429,13 @@ Playdar.Player.prototype = {
                 Playdar.status_bar.loading_handler(this);
             };
         }
-        return Playdar.client.soundmanager.createSound(options);
+        return this.soundmanager.createSound(options);
     },
     play_stream: function (sid) {
-        if (!Playdar.client.soundmanager) {
+        if (!this.soundmanager) {
             return false;
         }
-        var sound = Playdar.client.soundmanager.getSoundById(sid);
+        var sound = this.soundmanager.getSoundById(sid);
         if (this.nowplayingid != sid) {
             this.stop_all();
             if (sound.playState == 0) {
@@ -451,11 +451,11 @@ Playdar.Player.prototype = {
         return sound;
     },
     stop_all: function () {
-        if (!Playdar.client.soundmanager) {
+        if (!this.soundmanager) {
             return false;
         }
         if (this.nowplayingid) {
-            var sound = Playdar.client.soundmanager.getSoundById(this.nowplayingid);
+            var sound = this.soundmanager.getSoundById(this.nowplayingid);
             sound.stop();
             sound.setPosition(1);
             this.nowplayingid = null;
@@ -717,10 +717,10 @@ Playdar.StatusBar.prototype = {
     offline: function () {
         this.disconnect_link.style.display = "none";
         this.track_list_container.style.display = "none";
-        var message = '<a href="' + this.get_auth_url()
-                + '" target="' + this.auth_popup_name
+        var message = '<a href="' + Playdar.client.get_auth_url()
+                + '" target="' + Playdar.client.auth_popup_name
                 + '" onclick="'
-                + this.jsonp_callback('start_auth') + '();'
+                + Playdar.client.jsonp_callback('start_auth') + '();'
                 + 'return false;'
             + '">Connect</a>';
         this.status.innerHTML = message;

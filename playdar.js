@@ -1,24 +1,25 @@
-Playdar = function (auth_details, handlers) {
-    // Setup auth
-    this.auth_details = auth_details;
-    // Setup handlers
-    this.register_handlers(Playdar.DefaultHandlers);
-    this.register_handlers(handlers);
+Playdar = {
+    VERSION: "0.4",
+    SERVER_ROOT: "localhost",
+    SERVER_PORT: "8888",
+    WEB_HOST: "http://www.playdar.org",
+    STAT_TIMEOUT: 2000,
+    AUTH_POPUP_NAME: "PD_auth",
+    AUTH_POPUP_SIZE: {
+        'w': 500,
+        'h': 260
+    },
+    MAX_CONCURRENT_RESOLUTIONS: 50,
     
-    this.uuid = Playdar.Util.generate_uuid();
-    
-    // These are how we will access the "controllers" from global scope.
-    Playdar.client = this;
-    Playdar.status_bar = new Playdar.StatusBar();
-    Playdar.player = new Playdar.Player();
+    client: null,
+    status_bar: null,
+    player: null,
+    setup: function (auth_details, handlers) {
+        Playdar.client = new Playdar.Client(auth_details, handlers);
+        Playdar.player = new Playdar.Player();
+        Playdar.status_bar = new Playdar.StatusBar();
+    }
 };
-Playdar.setup = function (auth_details, handlers) {
-    return new Playdar(auth_details, handlers);
-};
-
-Playdar.client = null;
-Playdar.status_bar = null;
-Playdar.player = null;
 
 Playdar.DefaultHandlers = {
     auth: function () {
@@ -44,26 +45,36 @@ Playdar.DefaultHandlers = {
         } else {
             // Still polling
         }
-    },
-    stream_failure: function (sound) {
-        // Streaming failed
     }
 };
 
-Playdar.prototype = {
-    auth_details: null,
-    lib_version: "0.3.5",
-    server_root: "localhost",
-    server_port: "8888",
-    stat_timeout: 2000,
-    web_host: "http://www.playdar.org",
-    auth_popup_name: "PD_auth",
-    auth_popup_size: {
-        'w': 500,
-        'h': 260
-    },
+Playdar.Client = function (auth_details, handlers) {
+    this.auth_token = false;
+    this.auth_popup = null;
     
-    handlers: {},
+    this.handlers = {};
+    this.results_handlers = {};
+    
+    this.resolve_qids = [];
+    this.last_qid = "";
+    this.poll_counts = {};
+    
+    /**
+     * A query resolution queue consumed by process_resolution_queue, which is called
+     * each time a final_answer is received from the daemon.
+    **/
+    this.resolution_queue = [];
+    this.resolutions_in_progress = 0;
+    
+    // Setup auth
+    this.auth_details = auth_details;
+    // Setup handlers
+    this.register_handlers(Playdar.DefaultHandlers);
+    this.register_handlers(handlers);
+    
+    this.uuid = Playdar.Util.generate_uuid();
+};
+Playdar.Client.prototype = {
     register_handler: function (handler_name, callback) {
         if (!callback) {
             var callback = function () {};
@@ -80,7 +91,6 @@ Playdar.prototype = {
         return true;
     },
     // Custom search result handlers can be bound to a specific qid
-    results_handlers: {},
     register_results_handler: function (handler, qid) {
         if (qid) {
             this.results_handlers[qid] = handler;
@@ -91,7 +101,6 @@ Playdar.prototype = {
     
     // INIT / STAT / AUTH
     
-    auth_token: false,
     init: function () {
         if (!this.auth_token) {
             this.auth_token = Playdar.Util.getcookie('auth');
@@ -99,11 +108,10 @@ Playdar.prototype = {
         this.stat();
     },
     
-    stat_response: false,
     stat: function () {
         setTimeout(function () {
             Playdar.client.check_stat_timeout();
-        }, this.stat_timeout);
+        }, Playdar.STAT_TIMEOUT);
         Playdar.Util.loadjs(this.get_url("stat", "handle_stat"));
     },
     check_stat_timeout: function () {
@@ -118,7 +126,7 @@ Playdar.prototype = {
             if (this.auth_token) {
                 Playdar.status_bar.ready();
                 Playdar.status_bar.load_tracks();
-            } else if (this.auth_details) {
+            } else {
                 Playdar.status_bar.offline();
             }
         }
@@ -132,7 +140,7 @@ Playdar.prototype = {
     },
     clear_auth: function () {
         // Stop the music
-        this.stop_all();
+        Playdar.player.stop_all();
         // Revoke auth at the server
         Playdar.Util.loadjs(this.get_revoke_url());
         // Clear auth token
@@ -153,13 +161,11 @@ Playdar.prototype = {
     get_auth_url: function () {
         return this.get_base_url("/auth_1/?" + Playdar.Util.toQueryString(this.auth_details));
     },
-    auth_popup: null,
-    manual_auth: false,
     start_auth: function () {
         if (this.auth_popup === null || this.auth_popup.closed) {
             this.auth_popup = window.open(
                 this.get_auth_url(),
-                this.auth_popup_name,
+                Playdar.AUTH_POPUP_NAME,
                 this.get_auth_popup_options()
             );
         } else {
@@ -177,8 +183,8 @@ Playdar.prototype = {
         return [
             "left=" + popup_location.x,
             "top=" + popup_location.y,
-            "width=" + this.auth_popup_size.w,
-            "height=" + this.auth_popup_size.h,
+            "width=" + Playdar.AUTH_POPUP_SIZE.w,
+            "height=" + Playdar.AUTH_POPUP_SIZE.h,
             "location=yes",
             "toolbar=no",
             "menubar=yes",
@@ -188,11 +194,11 @@ Playdar.prototype = {
         ].join(',');
     },
     get_auth_popup_location: function () {
-        var window_location = Playdar.Util.get_window_location();
+        var window_location = Playdar.Util.get_window_position();
         var window_size = Playdar.Util.get_window_size();
         return {
-            'x': Math.max(0, window_location.x + (window_size.w - this.auth_popup_size.w) / 2),
-            'y': Math.max(0, window_location.y + (window_size.h - this.auth_popup_size.h) / 2)
+            'x': Math.max(0, window_location.x + (window_size.w - Playdar.AUTH_POPUP_SIZE.w) / 2),
+            'y': Math.max(0, window_location.y + (window_size.h - Playdar.AUTH_POPUP_SIZE.h) / 2)
         };
     },
     
@@ -213,17 +219,6 @@ Playdar.prototype = {
     
     // CONTENT RESOLUTION
     
-    resolve_qids: [],
-    last_qid: "",
-    poll_counts: {},
-    /**
-     * A query resolution queue consumed by process_resolution_queue, which is called
-     * each time a final_answer is received from the daemon.
-     */
-    resolution_queue: [],
-    max_concurrent_resolutions: 50,
-    resolutions_in_progress: 0,
-    
     resolve: function (art, alb, trk, qid) {
         var query = {
             artist: art,
@@ -242,10 +237,10 @@ Playdar.prototype = {
         this.process_resolution_queue();
     },
     process_resolution_queue: function() {
-        if (this.resolutions_in_progress >= this.max_concurrent_resolutions) {
+        if (this.resolutions_in_progress >= Playdar.MAX_CONCURRENT_RESOLUTIONS) {
             return false;
         }
-        var available_resolution_slots = this.max_concurrent_resolutions - this.resolutions_in_progress;
+        var available_resolution_slots = Playdar.MAX_CONCURRENT_RESOLUTIONS - this.resolutions_in_progress;
         for (var i = 1; i <= available_resolution_slots; i++) {
             var query = this.resolution_queue.shift();
             if (!query) {
@@ -330,22 +325,10 @@ Playdar.prototype = {
         }
     },
     
-    // SOUNDMANAGER 2 WRAPPERS
-    
-    register_stream: function (result, options) {
-        return Playdar.player.register_stream(result, options);
-    },
-    play_stream: function (sid) {
-        return Playdar.player.play_stream(sid);
-    },
-    stop_all: function () {
-        Playdar.player.stop_all();
-    },
-    
     // UTILITY FUNCTIONS
     
     get_base_url: function (path) {
-        var url = "http://" + this.server_root + ":" + this.server_port;
+        var url = "http://" + Playdar.SERVER_ROOT + ":" + Playdar.SERVER_PORT;
         if (path) {
             url += path;
         }
@@ -397,11 +380,11 @@ Playdar.prototype = {
 };
 
 Playdar.Player = function () {
+    this.streams = {};
+    this.nowplayingid = null;
+    this.soundmanager = null;
 };
 Playdar.Player.prototype = {
-    streams: {},
-    nowplayingid: null,
-    soundmanager: null,
     register_stream: function (result, options) {
         if (!this.soundmanager) {
             return false;
@@ -415,11 +398,6 @@ Playdar.Player.prototype = {
         }
         options.id = result.sid;
         options.url = Playdar.client.get_stream_url(result.sid);
-        options.onload = function (success) {
-            if (!success) {
-                Playdar.client.handlers.stream_failure(this);
-            }
-        };
         // Playback progress in status bar
         if (Playdar.status_bar) {
             options.whileplaying = function () {
@@ -473,14 +451,18 @@ Playdar.Player.prototype = {
 };
 
 Playdar.StatusBar = function () {
+    this.progress_bar_width = 200;
+    
+    this.request_count = 0;
+    this.pending_count = 0;
+    this.success_count = 0;
+    
+    this.query_list_link = null;
+    this.nowplaying_query_button = null;
+    
     this.build();
 };
 Playdar.StatusBar.prototype = {
-    progress_bar_width: 200,
-    request_count: 0,
-    pending_count: 0,
-    success_count: 0,
-    
     build: function () {
         /* Status bar
            ---------- */
@@ -502,7 +484,7 @@ Playdar.StatusBar.prototype = {
         var left_col = document.createElement("div");
         left_col.style.padding = "0 7px";
         // Logo
-        var logo = '<img src="' + Playdar.client.web_host + '/static/playdar_logo_32x32.png" width="32" height="32" style="vertical-align: middle; float: left; margin: 0 10px 0 0; border: 0; line-height: 36px;" />';
+        var logo = '<img src="' + Playdar.WEB_HOST + '/static/playdar_logo_32x32.png" width="32" height="32" style="vertical-align: middle; float: left; margin: 0 10px 0 0; border: 0; line-height: 36px;" />';
         left_col.innerHTML = logo;
         
         // - Status message
@@ -718,7 +700,7 @@ Playdar.StatusBar.prototype = {
         this.disconnect_link.style.display = "none";
         this.track_list_container.style.display = "none";
         var message = '<a href="' + Playdar.client.get_auth_url()
-                + '" target="' + Playdar.client.auth_popup_name
+                + '" target="' + Playdar.AUTH_POPUP_NAME
                 + '" onclick="'
                 + Playdar.client.jsonp_callback('start_auth') + '();'
                 + 'return false;'
@@ -795,7 +777,7 @@ Playdar.StatusBar.prototype = {
         if (this.query_count) {
             var status = " " + this.success_count + "/" + this.request_count;
             if (this.pending_count) {
-                status += ' <img src="' + this.web_host + '/static/track_throbber.gif" width="16" height="16" style="vertical-align: middle; margin: -2px 2px 0 2px"/> ' + this.pending_count;
+                status += ' <img src="' + Playdar.WEB_HOST + '/static/track_throbber.gif" width="16" height="16" style="vertical-align: middle; margin: -2px 2px 0 2px"/> ' + this.pending_count;
             }
             this.query_count.innerHTML = status;
         }
@@ -806,8 +788,6 @@ Playdar.StatusBar.prototype = {
         this.show_resolution_status();
     },
     
-    query_list_link: null,
-    nowplaying_query_button: null,
     querylist_click_handler: function (e) {
         var target = Playdar.Util.getTarget(e);
         while (target && target.parentNode) {
@@ -831,7 +811,7 @@ Playdar.StatusBar.prototype = {
                     this.nowplaying_query_button = target.previousSibling.firstChild.firstChild;
                 }
                 this.nowplaying_query_button.style.visibility = 'visible';
-                Playdar.client.play_stream(sid);
+                Playdar.player.play_stream(sid);
             }
             target = target.parentNode;
         }
@@ -902,7 +882,7 @@ Playdar.StatusBar.prototype = {
         }
     },
     build_querylist_result_table: function (result, i) {
-        var sound = Playdar.client.register_stream(result);
+        var sound = Playdar.player.register_stream(result);
         var row_tag_contents = ' class="sid_' + result.sid + '"';
         var border = '';
         if (i > 0) {
@@ -965,28 +945,9 @@ Playdar.StatusBar.prototype = {
         this.playhead.style.width = Math.round(portion_played * this.progress_bar_width) + "px";
     },
     loading_handler: function (sound) {
-        if ((!sound.firstBytesLoadedValue || sound.bytesLoaded == sound.previousBytesLoadedValue)
-         && (sound.bytesLoaded != sound.bytesTotal || (sound.bytesTotal == 0 && sound.bytesLoaded == 0))) {
-            // check for firstBytesLoadedValue since some streams
-            // don't start at 0 but still fail.
-            sound.firstBytesLoadedValue = sound.bytesLoaded;
-            var bytesLoaded = sound.bytesLoaded;
-            var bytesTotal = sound.bytesTotal;
-            // Setup a time delay to try and to figure
-            // out if we've got a stream failure.
-            setTimeout(function() {
-                // if it's still at the same point
-                if (sound.bytesLoaded == bytesLoaded && sound.bytesTotal == bytesTotal) {
-                    sound.stop();
-                    Playdar.client.handlers.stream_failure(sound);
-                }
-            }, 4000);
-        } else {
-            // Update the loading progress bar
-            var buffered = sound.bytesLoaded/sound.bytesTotal;
-            this.bufferhead.style.width = Math.round(buffered * this.progress_bar_width) + "px";
-        }
-        sound.previousBytesLoadedValue = sound.bytesLoaded;
+        // Update the loading progress bar
+        var buffered = sound.bytesLoaded/sound.bytesTotal;
+        this.bufferhead.style.width = Math.round(buffered * this.progress_bar_width) + "px";
     },
     stop_handler: function () {
         this.playback.style.display = "none";
@@ -1112,7 +1073,7 @@ Playdar.Util = {
     },
     
     // Window dimension/position helpers
-    get_window_location: function () {
+    get_window_position: function () {
         var location = {};
         if (window.screenLeft) {
             location.x = window.screenLeft || 0;

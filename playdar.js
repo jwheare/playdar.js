@@ -469,10 +469,10 @@ Playdar.StatusBar.prototype = {
         status_bar.style.width = '100%';
         status_bar.style.height = '36px';
         status_bar.style.padding = '7px 0';
-        status_bar.style.borderTop = '1px solid #3f7d31';
+        status_bar.style.borderTop = '2px solid #4c7a0f';
         status_bar.style.font = 'normal 13px/18px "Calibri", "Lucida Grande", sans-serif';
-        status_bar.style.color = "#517e09";
-        status_bar.style.background = '#cbdab1';
+        status_bar.style.color = "#335507";
+        status_bar.style.background = '#e8f9bb';
         
         /* Left column
            ----------- */
@@ -502,11 +502,11 @@ Playdar.StatusBar.prototype = {
         
         this.artist_name = document.createElement("span");
         this.artist_name.style.textTransform = "uppercase";
-        this.artist_name.style.color = "#5d8a0e";
+        this.artist_name.style.color = "#4c7a0f";
         
         this.track_name = document.createElement("strong");
         this.track_name.style.margin = "0 0 0 10px";
-        this.track_name.style.color = "#3e6206";
+        this.track_name.style.color = "#335507";
         
         this.track_link.appendChild(this.artist_name);
         this.track_link.appendChild(this.track_name);
@@ -518,7 +518,7 @@ Playdar.StatusBar.prototype = {
         progress_table.setAttribute('cellpadding', 0);
         progress_table.setAttribute('cellspacing', 0);
         progress_table.setAttribute('border', 0);
-        progress_table.style.color = "#517e09";
+        progress_table.style.color = "#4c7a0f";
         progress_table.style.font = 'normal 10px/16px "Verdana", sans-serif';
         var progress_tbody = document.createElement("tbody");
         var progress_row = document.createElement("tr");
@@ -534,7 +534,7 @@ Playdar.StatusBar.prototype = {
         var progress_bar = document.createElement("div");
         progress_bar.style.width = this.progress_bar_width + "px";
         progress_bar.style.height = "9px";
-        progress_bar.style.border = "1px solid #517e09";
+        progress_bar.style.border = "1px solid #4c7a0f";
         progress_bar.style.background = "#fff";
         progress_bar.style.position = "relative";
         // - Buffer progress
@@ -542,14 +542,14 @@ Playdar.StatusBar.prototype = {
         this.bufferhead.style.position = "absolute";
         this.bufferhead.style.width = 0;
         this.bufferhead.style.height = "9px";
-        this.bufferhead.style.background = "#e1f1c5";
+        this.bufferhead.style.background = "#d2f380";
         progress_bar.appendChild(this.bufferhead);
         // - Playback progress
         this.playhead = document.createElement("div");
         this.playhead.style.position = "absolute";
         this.playhead.style.width = 0;
         this.playhead.style.height = "9px";
-        this.playhead.style.background = "#98be3d";
+        this.playhead.style.background = "#6ea31e";
         progress_bar.appendChild(this.playhead);
         // Click to toggle pause
         progress_bar.onclick = function () {
@@ -679,7 +679,7 @@ Playdar.StatusBar.prototype = {
                 marginBottom = css.marginBottom;
             }
         }
-        document.body.style.marginBottom = (marginBottom.replace('px', '') - 0) + 36 + 'px';
+        document.body.style.marginBottom = (marginBottom.replace('px', '') - 0) + 36 + (7*2) + 2 + 'px';
         
         return status_bar;
     },

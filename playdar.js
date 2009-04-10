@@ -17,6 +17,9 @@ Playdar = {
     player: null,
     setup: function (auth_details) {
         Playdar.client = new Playdar.Client(auth_details);
+    },
+    setup_player: function (soundmanager) {
+        Playdar.player = new Playdar.Player(soundmanager);
     }
 };
 
@@ -385,8 +388,6 @@ Playdar.Player = function (soundmanager) {
     this.streams = {};
     this.nowplayingid = null;
     this.soundmanager = soundmanager;
-    
-    Playdar.player = this;
 };
 Playdar.Player.prototype = {
     register_stream: function (result, options) {

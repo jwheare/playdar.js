@@ -12,7 +12,7 @@ Playdar = function (auth_details, handlers) {
     Playdar.status_bar = new Playdar.StatusBar();
     Playdar.player = new Playdar.Player();
 };
-Playdar.create = function (auth_details, handlers) {
+Playdar.setup = function (auth_details, handlers) {
     return new Playdar(auth_details, handlers);
 };
 

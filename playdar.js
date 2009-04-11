@@ -131,13 +131,9 @@ Playdar.Client.prototype = {
         // Update status bar
         if (Playdar.USE_STATUS_BAR) {
             Playdar.status_bar = new Playdar.StatusBar();
-            if (this.auth_token) {
-                Playdar.status_bar.ready();
-            } else {
-                Playdar.status_bar.offline();
-            }
+            Playdar.status_bar.handle_stat(response);
         }
-        this.listeners.onStat(true);
+        this.listeners.onStat(response);
         
         if (response.authenticated) {
             this.listeners.onAuth();
@@ -169,6 +165,16 @@ Playdar.Client.prototype = {
     },
     get_auth_url: function () {
         return this.get_base_url("/auth_1/", this.auth_details);
+    },
+    get_auth_link_html: function (title) {
+        if (!title) {
+            title = "Connect";
+        }
+        var html = '<a href="' + this.get_auth_url()
+            + '" target="' + Playdar.AUTH_POPUP_NAME
+            + '" onclick="Playdar.client.start_auth(); return false;'
+        + '">' + title + '</a>';
+        return html;
     },
     start_auth: function () {
         if (this.auth_popup === null || this.auth_popup.closed) {
@@ -698,6 +704,14 @@ Playdar.StatusBar.prototype = {
         return status_bar;
     },
     
+    handle_stat: function (response) {
+        if (response.authenticated) {
+            this.ready();
+        } else {
+            this.offline();
+        }
+    },
+    
     get_queries_popup_url: function () {
         return Playdar.STATIC_HOST + '/demos/tracks.html';
     },
@@ -717,14 +731,10 @@ Playdar.StatusBar.prototype = {
         this.playdar_links.style.display = "";
         var message = "Ready";
         this.status.innerHTML = message;
-        
     },
     offline: function () {
         this.playdar_links.style.display = "none";
-        var message = '<a href="' + Playdar.client.get_auth_url()
-                + '" target="' + Playdar.AUTH_POPUP_NAME
-                + '" onclick="Playdar.client.start_auth(); return false;'
-            + '">Connect</a>';
+        var message = Playdar.client.get_auth_link_html();
         this.status.innerHTML = message;
     },
     start_manual_auth: function () {

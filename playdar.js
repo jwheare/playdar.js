@@ -1,5 +1,5 @@
 Playdar = {
-    VERSION: "0.4",
+    VERSION: "0.4.1",
     SERVER_ROOT: "localhost",
     SERVER_PORT: "8888",
     STATIC_HOST: "http://www.playdar.org",

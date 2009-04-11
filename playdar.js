@@ -468,6 +468,16 @@ Playdar.Player.prototype = {
                     options.onplay.apply(this, arguments);
                 }
             };
+            sound_options.onbufferchange = function () {
+                if (this.isBuffering) {
+                    scrobbler.pause();
+                } else {
+                    scrobbler.resume();
+                }
+                if (options && options.onbufferchange) {
+                    options.onbufferchange.apply(this, arguments);
+                }
+            };
             sound_options.onpause = function () {
                 scrobbler.pause();
                 if (options && options.onpause) {

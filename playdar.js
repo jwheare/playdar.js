@@ -9,7 +9,7 @@ Playdar = {
         'w': 500,
         'h': 260
     },
-    MAX_CONCURRENT_RESOLUTIONS: 50,
+    MAX_CONCURRENT_RESOLUTIONS: 5,
     USE_STATUS_BAR: true,
     
     client: null,

@@ -448,13 +448,13 @@ Playdar.Player.prototype = {
         if (Playdar.status_bar) {
             sound_options.whileplaying = function () {
                 Playdar.status_bar.playing_handler(this);
-                if (options.whileplaying) {
+                if (options && options.whileplaying) {
                     options.whileplaying.apply(this, arguments);
                 }
             };
             sound_options.whileloading = function () {
                 Playdar.status_bar.loading_handler(this);
-                if (options.whileloading) {
+                if (options && options.whileloading) {
                     options.whileloading.apply(this, arguments);
                 }
             };
@@ -464,31 +464,31 @@ Playdar.Player.prototype = {
             var scrobbler = this.scrobbler;
             sound_options.onplay = function () {
                 scrobbler.start(result.artist, result.track, result.album, result.duration);
-                if (options.onplay) {
+                if (options && options.onplay) {
                     options.onplay.apply(this, arguments);
                 }
             };
             sound_options.onpause = function () {
                 scrobbler.pause();
-                if (options.onpause) {
+                if (options && options.onpause) {
                     options.onpause.apply(this, arguments);
                 }
             };
             sound_options.onresume = function () {
                 scrobbler.resume();
-                if (options.onresume) {
+                if (options && options.onresume) {
                     options.onresume.apply(this, arguments);
                 }
             };
             sound_options.onstop = function () {
                 scrobbler.stop();
-                if (options.onstop) {
+                if (options && options.onstop) {
                     options.onstop.apply(this, arguments);
                 }
             };
             sound_options.onfinish = function () {
                 scrobbler.stop();
-                if (options.onfinish) {
+                if (options && options.onfinish) {
                     options.onfinish.apply(this, arguments);
                 }
             };

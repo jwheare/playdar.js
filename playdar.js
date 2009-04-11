@@ -159,12 +159,12 @@ Playdar.Client.prototype = {
         }
     },
     get_revoke_url: function () {
-        return this.get_base_url("/auth/?" + Playdar.Util.toQueryString({
+        return this.get_base_url("/auth/", {
             revoke: this.auth_token
-        }));
+        });
     },
     get_auth_url: function () {
-        return this.get_base_url("/auth_1/?" + Playdar.Util.toQueryString(this.auth_details));
+        return this.get_base_url("/auth_1/", this.auth_details);
     },
     start_auth: function () {
         if (this.auth_popup === null || this.auth_popup.closed) {
@@ -332,10 +332,13 @@ Playdar.Client.prototype = {
     
     // UTILITY FUNCTIONS
     
-    get_base_url: function (path) {
+    get_base_url: function (path, query_params) {
         var url = "http://" + Playdar.SERVER_ROOT + ":" + Playdar.SERVER_PORT;
         if (path) {
             url += path;
+        }
+        if (query_params) {
+            url += '?' + Playdar.Util.toQueryString(query_params);
         }
         return url;
     },
@@ -364,7 +367,7 @@ Playdar.Client.prototype = {
         if (this.auth_token) {
             query_params.auth = this.auth_token;
         }
-        return this.get_base_url("/api/?" + Playdar.Util.toQueryString(query_params));
+        return this.get_base_url("/api/", query_params);
     },
     
     // turn a source id into a stream url
@@ -384,31 +387,113 @@ Playdar.Client.prototype = {
     }
 };
 
+Playdar.Scrobbler = function () {
+};
+Playdar.Scrobbler.prototype = {
+    get_url: function (method, query_params) {
+        return Playdar.client.get_base_url("/audioscrobbler/" + method, query_params);
+    },
+    
+    start: function (artist, track, album, duration, track_number, mbid) {
+        var query_params = {
+            a: artist,
+            t: track,
+            o: 'P'
+        };
+        if (album) {
+            query_params['b'] = album;
+        }
+        if (duration) {
+            query_params['l'] = duration;
+        }
+        if (track_number) {
+            query_params['n'] = track_number;
+        }
+        if (mbid) {
+            query_params['m'] = mbid;
+        }
+        Playdar.Util.loadjs(this.get_url("start", query_params));
+    },
+    stop: function () {
+        Playdar.Util.loadjs(this.get_url("stop"));
+    },
+    pause: function () {
+        Playdar.Util.loadjs(this.get_url("pause"));
+    },
+    resume: function () {
+        Playdar.Util.loadjs(this.get_url("resume"));
+    }
+};
+
 Playdar.Player = function (soundmanager) {
     this.streams = {};
     this.nowplayingid = null;
     this.soundmanager = soundmanager;
+    this.scrobbler = new Playdar.Scrobbler();
 };
 Playdar.Player.prototype = {
     register_stream: function (result, options) {
         // Register result
         this.streams[result.sid] = result;
         
-        if (!options) {
-            var options = {};
+        var sound_options = {};
+        if (options) {
+            for (k in options) {
+                sound_options[k] = options[k];
+            }
         }
-        options.id = result.sid;
-        options.url = Playdar.client.get_stream_url(result.sid);
+        sound_options.id = result.sid;
+        sound_options.url = Playdar.client.get_stream_url(result.sid);
         // Playback progress in status bar
         if (Playdar.status_bar) {
-            options.whileplaying = function () {
+            sound_options.whileplaying = function () {
                 Playdar.status_bar.playing_handler(this);
+                if (options.whileplaying) {
+                    options.whileplaying.apply(this, arguments);
+                }
             };
-            options.whileloading = function () {
+            sound_options.whileloading = function () {
                 Playdar.status_bar.loading_handler(this);
+                if (options.whileloading) {
+                    options.whileloading.apply(this, arguments);
+                }
             };
         }
-        return this.soundmanager.createSound(options);
+        // Wrap sound lifecycle callbacks in scrobbling calls
+        if (this.scrobbler) {
+            var scrobbler = this.scrobbler;
+            sound_options.onplay = function () {
+                scrobbler.start(result.artist, result.track, result.album, result.duration);
+                if (options.onplay) {
+                    options.onplay.apply(this, arguments);
+                }
+            };
+            sound_options.onpause = function () {
+                scrobbler.pause();
+                if (options.onpause) {
+                    options.onpause.apply(this, arguments);
+                }
+            };
+            sound_options.onresume = function () {
+                scrobbler.resume();
+                if (options.onresume) {
+                    options.onresume.apply(this, arguments);
+                }
+            };
+            sound_options.onstop = function () {
+                scrobbler.stop();
+                if (options.onstop) {
+                    options.onstop.apply(this, arguments);
+                }
+            };
+            sound_options.onfinish = function () {
+                scrobbler.stop();
+                if (options.onfinish) {
+                    options.onfinish.apply(this, arguments);
+                }
+            };
+        }
+        return this.soundmanager.createSound(sound_options);
     },
     play_stream: function (sid) {
         var sound = this.soundmanager.getSoundById(sid);

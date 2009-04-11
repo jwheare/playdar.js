@@ -9,6 +9,11 @@ Playdar = {
         'w': 500,
         'h': 260
     },
+    QUERIES_POPUP_NAME: "PD_queries",
+    QUERIES_POPUP_SIZE: {
+        'w': 640,
+        'h': 700
+    },
     MAX_CONCURRENT_RESOLUTIONS: 5,
     USE_STATUS_BAR: true,
     
@@ -128,7 +133,6 @@ Playdar.Client.prototype = {
             Playdar.status_bar = new Playdar.StatusBar();
             if (this.auth_token) {
                 Playdar.status_bar.ready();
-                Playdar.status_bar.load_tracks();
             } else {
                 Playdar.status_bar.offline();
             }
@@ -171,7 +175,7 @@ Playdar.Client.prototype = {
             this.auth_popup = window.open(
                 this.get_auth_url(),
                 Playdar.AUTH_POPUP_NAME,
-                this.get_auth_popup_options()
+                Playdar.Util.get_popup_options(Playdar.AUTH_POPUP_SIZE)
             );
         } else {
             this.auth_popup.focus();
@@ -182,29 +186,6 @@ Playdar.Client.prototype = {
                 Playdar.status_bar.start_manual_auth();
             }
         }
-    },
-    get_auth_popup_options: function () {
-        var popup_location = this.get_auth_popup_location();
-        return [
-            "left=" + popup_location.x,
-            "top=" + popup_location.y,
-            "width=" + Playdar.AUTH_POPUP_SIZE.w,
-            "height=" + Playdar.AUTH_POPUP_SIZE.h,
-            "location=yes",
-            "toolbar=no",
-            "menubar=yes",
-            "status=yes",
-            "resizable=yes",
-            "scrollbars=yes"
-        ].join(',');
-    },
-    get_auth_popup_location: function () {
-        var window_location = Playdar.Util.get_window_position();
-        var window_size = Playdar.Util.get_window_size();
-        return {
-            'x': Math.max(0, window_location.x + (window_size.w - Playdar.AUTH_POPUP_SIZE.w) / 2),
-            'y': Math.max(0, window_location.y + (window_size.h - Playdar.AUTH_POPUP_SIZE.h) / 2)
-        };
     },
     
     auth_callback: function (token) {
@@ -541,6 +522,8 @@ Playdar.Player.prototype = {
 };
 
 Playdar.StatusBar = function () {
+    this.queries_popup = null;
+    
     this.progress_bar_width = 200;
     
     this.request_count = 0;
@@ -675,95 +658,31 @@ Playdar.StatusBar.prototype = {
         settings_link.innerHTML = '<a href="' + Playdar.client.get_base_url() + '" target="_blank">Settings</a>';
         right_col.appendChild(settings_link);
         // - Disconnect link
-        this.disconnect_link = document.createElement("p");
-        this.disconnect_link.style.margin = 0;
-        this.disconnect_link.innerHTML = '<a href="#" onclick="'
-            + Playdar.client.jsonp_callback('clear_auth') + '();'
-            + 'return false;'
-            + '">Disconnect</a>';
-        right_col.appendChild(this.disconnect_link);
+        this.playdar_links = document.createElement("p");
+        this.playdar_links.style.margin = 0;
+        
+        this.playdar_links.innerHTML = '<a href="' +  this.get_queries_popup_url()
+                + '" target="' + Playdar.QUERIES_POPUP_NAME
+                + '" onclick="Playdar.status_bar.open_queries_popup(); return false;'
+            + '">Tracks</a>'
+            + ' | '
+            + '<a href="#" onclick="Playdar.client.clear_auth(); return false;">Disconnect</a>';
+        right_col.appendChild(this.playdar_links);
+        
+        // - Query count
+        this.query_count = document.createElement("span");
+        this.query_count.style.margin = "0 5px 0 5px";
+        this.query_count.style.fontSize = "11px";
+        this.query_count.style.fontWeight = "normal";
+        this.query_count.style.color = "#6ea31e";
+        this.playdar_links.insertBefore(this.query_count, this.playdar_links.firstChild);
         
         /* Build status bar
            --------------- */
         status_bar.appendChild(right_col);
         status_bar.appendChild(left_col);
         
-        /* Track list
-           ---------- */
-        // - Track list container
-        this.track_list_container = document.createElement("div");
-        this.track_list_container.style.position = "fixed";
-        this.track_list_container.style.bottom = 0;
-        this.track_list_container.style.left = 0;
-        this.track_list_container.style.zIndex = 100;
-        this.track_list_container.style.marginBottom = 36 + (7*2) + "px";
-        this.track_list_container.style.font = 'normal 13px/18px "Calibri", "Lucida Grande", sans-serif';
-        this.track_list_container.style.color = "#fff";
-        // - Track list head
-        var track_list_head = document.createElement("h2");
-        track_list_head.style.cssFloat = "left";
-        track_list_head.style.margin = "0 0 -1px 0";
-        track_list_head.style.padding = "5px 7px";
-        track_list_head.style.border = "1px solid #3f7d31";
-        track_list_head.style.borderWidth = "1px 1px 1px 0";
-        track_list_head.style.borderBottomColor = "#669a28";
-        track_list_head.style.fontSize = "15px";
-        track_list_head.style.background = "#669a28";
-        track_list_head.style.color = "#fff";
-        track_list_head.innerHTML = "Tracks";
-        // - Query count
-        this.query_count = document.createElement("span");
-        this.query_count.style.margin = "0 0 0 5px";
-        this.query_count.style.fontSize = "11px";
-        this.query_count.style.fontWeight = "normal";
-        this.query_count.style.color = "#cbdab1";
-        track_list_head.appendChild(this.query_count);
-        // - Toggle track list body
-        track_list_head.onclick = function () {
-            var hidden = (Playdar.status_bar.track_list_body.style.display == "none");
-            Playdar.status_bar.track_list_body.style.display = hidden ? "" : "none";
-        };
-        this.track_list_container.appendChild(track_list_head);
-        
-        // var playlist_head = track_list_head.cloneNode(false);
-        // playlist_head.style.background = "#3f7d31";
-        // playlist_head.innerHTML = "Playlist";
-        // this.track_list_container.appendChild(playlist_head);
-        
-        // - Track list body
-        this.track_list_body = document.createElement("div");
-        this.track_list_body.style.clear = "left";
-        this.track_list_body.style.display = "none";
-        this.track_list_body.style.width = "300px";
-        this.track_list_body.style.height = "300px";
-        this.track_list_body.style.overflowY = "auto";
-        this.track_list_body.style.overflowX = "hidden";
-        this.track_list_body.style.whiteSpace = "nowrap";
-        this.track_list_body.style.padding = 0;
-        this.track_list_body.style.border = "1px solid #3f7d31";
-        this.track_list_body.style.borderWidth = "1px 1px 0 0";
-        this.track_list_body.style.background = "#669a28";
-        // - Track list
-        this.track_list = document.createElement("ul");
-        this.track_list.style.margin = 0;
-        this.track_list.style.padding = 0;
-        // - Session track list
-        this.session_track_list = this.track_list.cloneNode(false);
-        this.session_track_list.style.paddingBottom = "7px";
-        this.session_track_list.style.borderBottom = "1px solid #3f7d31";
-        this.session_track_list.style.display = "none";
-        // - Toggle query results
-        this.track_list_body.onclick = function (e) {
-            return Playdar.status_bar.querylist_click_handler.call(Playdar.status_bar, e);
-        };
-        
-        this.track_list_body.appendChild(this.session_track_list);
-        this.track_list_body.appendChild(this.track_list);
-        
-        this.track_list_container.appendChild(this.track_list_body);
-        
         /* Build status bar */
-        document.body.appendChild(this.track_list_container);
         document.body.appendChild(status_bar);
         
         // Adjust the page bottom margin to fit status bar
@@ -779,232 +698,68 @@ Playdar.StatusBar.prototype = {
         return status_bar;
     },
     
+    get_queries_popup_url: function () {
+        return Playdar.STATIC_HOST + '/demos/tracks.html';
+    },
+    open_queries_popup: function () {
+        if (this.queries_popup === null || this.queries_popup.closed) {
+            this.queries_popup = window.open(
+                this.get_queries_popup_url(),
+                Playdar.QUERIES_POPUP_NAME,
+                Playdar.Util.get_popup_options(Playdar.QUERIES_POPUP_SIZE)
+            );
+        } else {
+            this.queries_popup.focus();
+        }
+    },
+    
     ready: function () {
-        this.disconnect_link.style.display = "";
-        this.track_list_container.style.display = "";
+        this.playdar_links.style.display = "";
         var message = "Ready";
         this.status.innerHTML = message;
         
     },
     offline: function () {
-        this.disconnect_link.style.display = "none";
-        this.track_list_container.style.display = "none";
+        this.playdar_links.style.display = "none";
         var message = '<a href="' + Playdar.client.get_auth_url()
                 + '" target="' + Playdar.AUTH_POPUP_NAME
-                + '" onclick="'
-                + Playdar.client.jsonp_callback('start_auth') + '();'
-                + 'return false;'
+                + '" onclick="Playdar.client.start_auth(); return false;'
             + '">Connect</a>';
         this.status.innerHTML = message;
     },
     start_manual_auth: function () {
-        this.disconnect_link.style.display = "none";
-        this.track_list_container.style.display = "none";
+        this.playdar_links.style.display = "none";
         var input_id = "manualAuth_" + Playdar.client.uuid;
         var message = '<input type="text" id="' + input_id + '" />'
-            + ' <input type="submit" value="Allow access to Playdar" onclick="'
-                + Playdar.client.jsonp_callback('manual_auth_callback') + '(\'' + input_id + '\');'
-                + 'return false;'
+            + ' <input type="submit" value="Allow access to Playdar"'
+                + ' onclick="Playdar.client.manual_auth_callback(\'' + input_id + '\'); return false;'
             + '" />';
         this.status.innerHTML = message;
     },
     
-    load_tracks: function () {
-        Playdar.Util.loadjs(Playdar.client.get_url(
-            "list_queries",
-            ["Playdar.status_bar", "handle_queries"]
-        ));
-    },
-    handle_queries: function (response) {
-        var list_items = "";
-        for (var i = 0; i < response.queries.length; i++) {
-            var li = Playdar.status_bar.build_track_list_item(response.queries[i]);
-            list_items += li;
+    show_resolution_status: function () {
+        if (this.query_count) {
+            var status = " ";
+            if (this.pending_count) {
+                status += this.pending_count + ' <img src="' + Playdar.STATIC_HOST + '/static/track_throbber.gif" width="16" height="16" style="vertical-align: middle; margin: -2px 2px 0 2px"/> ';
+            }
+            status += " " + this.success_count + "/" + this.request_count;
+            this.query_count.innerHTML = status;
         }
-        Playdar.status_bar.track_list.innerHTML = list_items;
     },
-    
     handle_results: function (response, final_answer) {
         if (final_answer) {
             this.pending_count--;
             if (response.results.length) {
                 this.success_count++;
             }
-            list_item = this.build_track_list_item(response);
-            this.session_track_list.innerHTML = list_item + this.session_track_list.innerHTML;
-            this.session_track_list.style.display = "";
         }
         this.show_resolution_status();
-    },
-    
-    build_track_list_item: function (response) {
-        var color = response.query.solved ? 'fff' : 'cbdab1';
-        var num_results = (response.results && response.results.length) || response.num_results;
-        var track = response.query.artist + ' - ' + response.query.track;
-        if (!num_results) {
-            track = "<s>" + track + "</s>";
-        }
-        var li = '<li style="'
-                + 'margin: 4px 0 0 0;'
-                + 'padding: 4px 0 0 0;'
-                + 'line-height: 11px;'
-            + '">'
-                + '<span style="padding: 0 7px">+</span>'
-                + '<span style="padding: 0 7px 0 0">▸</span>'
-                + '<a href="' + Playdar.client.get_base_url("/queries/" + response.query.qid) + '" style="'
-                    + 'padding: 0 7px 0 0;'
-                    + 'text-decoration: none;'
-                    + 'color: #' + color + ';'
-                + '" class="playdar_query">'
-                    + track
-                + '</a>'
-                + '<div style="display: none; margin-top: 5px; padding: 5px; border: 1px solid #3f7d31; border-width: 1px 0; background: #cbdab1; color: #3E6206;"></div>'
-            + '</li>';
-        return li;
-    },
-    
-    show_resolution_status: function () {
-        if (this.query_count) {
-            var status = " " + this.success_count + "/" + this.request_count;
-            if (this.pending_count) {
-                status += ' <img src="' + Playdar.STATIC_HOST + '/static/track_throbber.gif" width="16" height="16" style="vertical-align: middle; margin: -2px 2px 0 2px"/> ' + this.pending_count;
-            }
-            this.query_count.innerHTML = status;
-        }
     },
     increment_requests: function () {
         this.request_count++;
         this.pending_count++;
         this.show_resolution_status();
-    },
-    
-    querylist_click_handler: function (e) {
-        var target = Playdar.Util.getTarget(e);
-        while (target && target.parentNode) {
-            if (target.nodeName == 'A' && target.className == 'playdar_query') {
-                if (target.nextSibling.style.display == "none") {
-                    this.expand_querylist_result(target);
-                } else {
-                    this.query_list_link = target;
-                    this.hide_querylist_results();
-                }
-                return false;
-            } else if (target.nodeName == 'TR' && target.className.indexOf('sid_') == 0) {
-                var sid = target.className.replace('sid_', '');
-                if (this.nowplaying_query_button) {
-                    this.nowplaying_query_button.style.visibility = 'hidden';
-                }
-                // Find: tr td.playdar_play span
-                if (target.firstChild.className == 'playdar_play') {
-                    this.nowplaying_query_button = target.firstChild.firstChild;
-                } else {
-                    this.nowplaying_query_button = target.previousSibling.firstChild.firstChild;
-                }
-                this.nowplaying_query_button.style.visibility = 'visible';
-                Playdar.player.play_stream(sid);
-            }
-            target = target.parentNode;
-        }
-    },
-    expand_querylist_result: function (target) {
-        this.hide_querylist_results();
-        this.query_list_link = target;
-        var url_root = Playdar.client.get_base_url("/queries/");
-        var qid = target.href.replace(url_root, '');
-        if (qid) {
-            this.get_querylist_results(qid);
-        }
-    },
-    hide_querylist_results: function () {
-        if (this.query_list_link) {
-            this.query_list_link.parentNode.style.background = "none";
-            this.query_list_link.nextSibling.style.display = "none";
-            this.query_list_link = null;
-        }
-    },
-    get_querylist_results: function (qid) {
-        Playdar.Util.loadjs(Playdar.client.get_url(
-            'get_results',
-            ['Playdar.status_bar', 'show_querylist_results'],
-            {
-                qid: qid
-            }
-        ));
-    },
-    show_querylist_results: function (response) {
-        if (this.query_list_link) {
-            var final_answer = Playdar.client.poll_results(response, this.get_querylist_results, this);
-            var querylist_results = this.query_list_link.nextSibling;
-            if (final_answer) {
-                if (response.results.length) {
-                    var result_table = '<table cellpadding="0" cellspacing="0" border="0" style="'
-                            + 'width: 275px;'
-                        + '">';
-                    for (var i = 0; i < response.results.length; i++) {
-                        result_table += this.build_querylist_result_table(response.results[i], i);
-                    }
-                    result_table += '</table>';
-                    querylist_results.innerHTML = result_table;
-                    
-                    // Show correct play button
-                    if (Playdar.player.nowplayingid) {
-                        var cells = querylist_results.getElementsByTagName('td');
-                        for (var i = 0; i < cells.length; i++) {
-                            var cell = cells[i];
-                            if (cell.className == 'playdar_play') {
-                                var sid = cell.parentNode.className.replace('sid_', '');
-                                if (Playdar.player.nowplayingid == sid) {
-                                    this.nowplaying_query_button = cell.firstChild;
-                                    this.nowplaying_query_button.style.visibility = 'visible';
-                                }
-                            }
-                        }
-                    }
-                } else {
-                    querylist_results.innerHTML = "No results";
-                }
-            } else {
-                querylist_results.innerHTML = "Checking results...";
-            }
-            
-            this.query_list_link.parentNode.style.background = "#55851a";
-            querylist_results.style.display = "";
-        }
-    },
-    build_querylist_result_table: function (result, i) {
-        var sound = Playdar.player.register_stream(result);
-        var row_tag_contents = ' class="sid_' + result.sid + '"';
-        var border = '';
-        if (i > 0) {
-            border = 'border-top: 1px solid #bbcaa1;';
-        }
-        var score = '';
-        if (result.score < 1) {
-            row_tag_contents = row_tag_contents + ' style="color: #5D8A0E;"';
-            score = result.score.toFixed(1);
-        }
-        var row = '<tr' + row_tag_contents + '>'
-                + '<td class="playdar_play" style="'
-                    + 'width: 12px;'
-                    + 'text-align: right;'
-                    + 'padding: 5px;'
-                    + border
-                + '">'
-                    + '<span style="visibility: hidden;">'
-                        + '▸'
-                    + '</span>'
-                + '</td>'
-                + '<td colspan="3" style="padding: 5px 3px;' + border + '">'
-                    + result.artist + ' - ' + result.track
-                + '</td>'
-            + '</tr>'
-            + '<tr' + row_tag_contents + '>'
-                + '<td style=" padding: 0 2px 7px 2px; text-align: right;">' + score + '</td>'
-                + '<td style="width: 100px; padding: 0 3px 7px 3px;">' + result.source + '</td>'
-                + '<td style="width: 35px; padding: 0 0 7px 0">' + Playdar.Util.mmss(result.duration) + '</td>'
-                + '<td style="width: 50px; padding: 0 0 7px 0; text-align: right;">' + result.bitrate + 'Kbps</td>'
-            + '</tr>';
-        return row;
     },
     
     play_handler: function (stream) {
@@ -1187,6 +942,30 @@ Playdar.Util = {
                  (document && document.documentElement && document.documentElement.clientHeight) || 
                  (document && document.body && document.body.clientHeight) || 
                  0
+        };
+    },
+    
+    get_popup_options: function (size) {
+        var popup_location = Playdar.Util.get_popup_location(size);
+        return [
+            "left=" + popup_location.x,
+            "top=" + popup_location.y,
+            "width=" + size.w,
+            "height=" + size.h,
+            "location=yes",
+            "toolbar=no",
+            "menubar=yes",
+            "status=yes",
+            "resizable=yes",
+            "scrollbars=yes"
+        ].join(',');
+    },
+    get_popup_location: function (size) {
+        var window_location = Playdar.Util.get_window_position();
+        var window_size = Playdar.Util.get_window_size();
+        return {
+            'x': Math.max(0, window_location.x + (window_size.w - size.w) / 2),
+            'y': Math.max(0, window_location.y + (window_size.h - size.h) / 2)
         };
     },
     

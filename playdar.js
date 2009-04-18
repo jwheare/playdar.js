@@ -22,6 +22,7 @@ Playdar = {
     player: null,
     setup: function (auth_details) {
         new Playdar.Client(auth_details);
+        new Playdar.Boffin();
     },
     setup_player: function (soundmanager) {
         new Playdar.Player(soundmanager);
@@ -52,6 +53,9 @@ Playdar.DefaultListeners = {
         } else {
             // Still polling
         }
+    },
+    onTagCloud: function (response) {
+        // Tag cloud response
     }
 };
 
@@ -368,17 +372,41 @@ Playdar.Client.prototype = {
     }
 };
 
+Playdar.Boffin = function () {
+    Playdar.boffin = this;
+};
+Playdar.Boffin.prototype = {
+    get_url: function (method, query_params) {
+        query_params = query_params || {};
+        query_params.jsonp = query_params.jsonp || 'Playdar.Util.log';
+        return Playdar.client.get_base_url("/boffin/" + method, query_params);
+    },
+    get_tagcloud: function () {
+        Playdar.Util.loadjs(this.get_url("tagcloud", {
+            jsonp: 'Playdar.boffin.handle_tagcloud'
+        }));
+    },
+    handle_tagcloud: function (response) {
+        Playdar.Util.loadjs(Playdar.client.get_url(
+            "get_results",
+            ["Playdar.boffin", "handle_tagcloud_results"],
+            {
+                qid: response.qid
+            }
+        ));
+    },
+    handle_tagcloud_results: function (response) {
+        Playdar.client.listeners.onTagCloud(response);
+    }
+};
+
 Playdar.Scrobbler = function () {
     Playdar.scrobbler = this;
 };
 Playdar.Scrobbler.prototype = {
-    callback: function (response) {
-        
-    },
-    
     get_url: function (method, query_params) {
         query_params = query_params || {};
-        query_params.jsonp = query_params.jsonp || 'Playdar.scrobbler.callback';
+        query_params.jsonp = query_params.jsonp || 'Playdar.Util.log';
         return Playdar.client.get_base_url("/audioscrobbler/" + method, query_params);
     },
     
@@ -994,6 +1022,12 @@ Playdar.Util = {
     apply_property_function: function (obj, property, scope, args) {
         if (obj && obj[property]) {
             obj[property].apply(scope, args);
+        }
+    },
+    
+    log: function (response) {
+        if (typeof console != 'undefined') {
+            console.dir(response);
         }
     }
 };

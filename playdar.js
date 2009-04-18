@@ -89,7 +89,7 @@ Playdar.Client = function (auth_details, listeners) {
 };
 Playdar.Client.prototype = {
     register_listener: function (event, callback) {
-        callback = callback || function () {};
+        callback = callback || Playdar.Util.null_callback;
         this.listeners[event] = function () { return callback.apply(Playdar.client, arguments); };
     },
     register_listeners: function (listeners) {
@@ -378,7 +378,7 @@ Playdar.Boffin = function () {
 Playdar.Boffin.prototype = {
     get_url: function (method, query_params) {
         query_params = query_params || {};
-        query_params.jsonp = query_params.jsonp || 'Playdar.Util.log';
+        query_params.jsonp = query_params.jsonp || 'Playdar.Util.null_callback';
         return Playdar.client.get_base_url("/boffin/" + method, query_params);
     },
     get_tagcloud: function () {
@@ -406,7 +406,7 @@ Playdar.Scrobbler = function () {
 Playdar.Scrobbler.prototype = {
     get_url: function (method, query_params) {
         query_params = query_params || {};
-        query_params.jsonp = query_params.jsonp || 'Playdar.Util.log';
+        query_params.jsonp = query_params.jsonp || 'Playdar.Util.null_callback';
         return Playdar.client.get_base_url("/audioscrobbler/" + method, query_params);
     },
     
@@ -1029,5 +1029,6 @@ Playdar.Util = {
         if (typeof console != 'undefined') {
             console.dir(response);
         }
-    }
+    },
+    null_callback: function () {}
 };

@@ -382,21 +382,18 @@ Playdar.Boffin.prototype = {
         return Playdar.client.get_base_url("/boffin/" + method, query_params);
     },
     get_tagcloud: function () {
+        // Update resolving progress status
+        if (Playdar.status_bar) {
+            Playdar.status_bar.increment_requests();
+        }
+        Playdar.client.resolutions_in_progress++;
         Playdar.Util.loadjs(this.get_url("tagcloud", {
             jsonp: 'Playdar.boffin.handle_tagcloud'
         }));
     },
     handle_tagcloud: function (response) {
-        Playdar.Util.loadjs(Playdar.client.get_url(
-            "get_results",
-            ["Playdar.boffin", "handle_tagcloud_results"],
-            {
-                qid: response.qid
-            }
-        ));
-    },
-    handle_tagcloud_results: function (response) {
-        Playdar.client.listeners.onTagCloud(response);
+        Playdar.client.register_results_handler(Playdar.client.listeners.onTagCloud, response.qid);
+        Playdar.client.get_results(response.qid);
     },
     get_tag_rql: function (tag) {
         // Update resolving progress status

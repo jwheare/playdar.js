@@ -56,6 +56,9 @@ Playdar.DefaultListeners = {
     },
     onTagCloud: function (response) {
         // Tag cloud response
+    },
+    onRQL: function (response) {
+        // RQL playlist response
     }
 };
 
@@ -406,6 +409,7 @@ Playdar.Boffin.prototype = {
         }));
     },
     handle_rql: function (response) {
+        Playdar.client.register_results_handler(Playdar.client.listeners.onRQL, response.qid);
         Playdar.client.get_results(response.qid);
     }
 };

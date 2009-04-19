@@ -255,8 +255,13 @@ Playdar.Client.prototype = {
     
     // poll results for a query id
     get_results: function (qid) {
+        if (!this.poll_counts[qid]) {
+            this.poll_counts[qid] = 0;
+        }
+        this.poll_counts[qid]++;
         Playdar.Util.loadjs(this.get_url("get_results", "handle_results", {
-            qid: qid
+            qid: qid,
+            poll: this.poll_counts[qid]
         }));
     },
     poll_results: function (response, callback, context) {
@@ -298,15 +303,8 @@ Playdar.Client.prototype = {
         if (response.query.solved == true) {
             return true;
         }
-        // Stop if we've got a perfect match
-        if (response.results.length && response.results[0].score == 1.0) {
-            return true;
-        }
         // Stop if we've exceeded 4 poll requests
-        if (!this.poll_counts[response.qid]) {
-            this.poll_counts[response.qid] = 0;
-        }
-        if (++this.poll_counts[response.qid] >= 4) {
+        if (this.poll_counts[response.qid] >= 4) {
             return true;
         }
         return false;

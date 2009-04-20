@@ -402,7 +402,8 @@ Playdar.Boffin.prototype = {
             Playdar.status_bar.increment_requests();
         }
         Playdar.client.resolutions_in_progress++;
-        Playdar.Util.loadjs(this.get_url("rql/tag:" + tag, {
+        var rql = 'tag:"' + tag + '"';
+        Playdar.Util.loadjs(this.get_url("rql/" + encodeURIComponent(rql), {
             jsonp: 'Playdar.boffin.handle_rql'
         }));
     },

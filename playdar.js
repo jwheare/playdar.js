@@ -275,6 +275,21 @@ Playdar.Client.prototype = {
         }
         return final_answer;
     },
+    should_stop_polling: function (response) {
+        // Stop if we've exceeded our refresh limit
+        if (response.refresh_interval <= 0) {
+            return true;
+        }
+        // Stop if the query is solved
+        if (response.query.solved == true) {
+            return true;
+        }
+        // Stop if we've exceeded 4 poll requests
+        if (this.poll_counts[response.qid] >= 4) {
+            return true;
+        }
+        return false;
+    },
     handle_results: function (response) {
         var final_answer = this.poll_results(response, this.get_results);
         // Status bar handler
@@ -293,21 +308,6 @@ Playdar.Client.prototype = {
             // fall back to standard handler
             this.listeners.onResults(response, final_answer);
         }
-    },
-    should_stop_polling: function (response) {
-        // Stop if we've exceeded our refresh limit
-        if (response.refresh_interval <= 0) {
-            return true;
-        }
-        // Stop if the query is solved
-        if (response.query.solved == true) {
-            return true;
-        }
-        // Stop if we've exceeded 4 poll requests
-        if (this.poll_counts[response.qid] >= 4) {
-            return true;
-        }
-        return false;
     },
     get_last_results: function () {
         if (this.last_qid) {

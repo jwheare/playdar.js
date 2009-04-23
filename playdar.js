@@ -350,10 +350,14 @@ Playdar.Client.prototype = {
                 query_params.jsonp = this.jsonp_callback(jsonp);
             }
         }
+        this.add_auth_token(query_params);
+        return this.get_base_url("/api/", query_params);
+    },
+    
+    add_auth_token: function (query_params) {
         if (this.auth_token) {
             query_params.auth = this.auth_token;
         }
-        return this.get_base_url("/api/", query_params);
     },
     
     // turn a source id into a stream url
@@ -380,6 +384,7 @@ Playdar.Boffin.prototype = {
     get_url: function (method, query_params) {
         query_params = query_params || {};
         query_params.jsonp = query_params.jsonp || 'Playdar.Util.null_callback';
+        Playdar.client.add_auth_token(query_params);
         return Playdar.client.get_base_url("/boffin/" + method, query_params);
     },
     get_tagcloud: function () {
@@ -420,6 +425,7 @@ Playdar.Scrobbler.prototype = {
     get_url: function (method, query_params) {
         query_params = query_params || {};
         query_params.jsonp = query_params.jsonp || 'Playdar.Util.null_callback';
+        Playdar.client.add_auth_token(query_params);
         return Playdar.client.get_base_url("/audioscrobbler/" + method, query_params);
     },
     

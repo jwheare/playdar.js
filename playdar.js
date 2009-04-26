@@ -234,6 +234,13 @@ Playdar.Client.prototype = {
         return tracks;
     },
     
+    /**
+     * Playdar.client.autodetect([callback])
+     * - callback (Function): Function to be run for each track to be resolved
+     *      Will be passed the track object
+     * 
+     * Attempts to detect any mentions of a track on a page and resolves them.
+    **/
     autodetect: function (callback) {
         var track, qid;
         var tracks = this.parse_microformats();
@@ -362,13 +369,16 @@ Playdar.Client.prototype = {
     },
     
     /**
-     * Playdar.client.get_url(method, jsonp[, options]) -> String
+     * Playdar.client.get_url(method, jsonp[, query_params]) -> String
      * - method (String): Method to call on the Playdar API
      * - jsonp (String | Array): JSONP Callback name.
      *     If a string, will be passed to Playdar.client.jsonp_callback to build
      *     a callback of the form Playdar.client.<callback>
      *     If an array, will be joined together with dot notation.
      * - query_params (Object): An optional object that defines extra query params
+     * 
+     * Builds an API URL from a method name, jsonp parameter and an optional object
+     * of extra query parameters.
     **/
     get_url: function (method, jsonp, query_params) {
         query_params = query_params || {};

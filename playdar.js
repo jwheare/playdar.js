@@ -237,7 +237,8 @@ Playdar.Client.prototype = {
     /**
      * Playdar.client.autodetect([callback])
      * - callback (Function): Function to be run for each track to be resolved
-     *      Will be passed the track object
+     *      Will be passed the track object. If this returns a qid, it will be
+     *      passed on to the resolve call.
      * 
      * Attempts to detect any mentions of a track on a page and resolves them.
     **/

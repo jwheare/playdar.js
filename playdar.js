@@ -288,6 +288,9 @@ Playdar.Client.prototype = {
     },
     cancel_resolve: function () {
         this.initialise_resolve();
+        if (Playdar.status_bar) {
+            Playdar.status_bar.cancel_resolve();
+        }
     },
     initialise_resolve: function () {
         this.resolution_queue = [];
@@ -863,6 +866,10 @@ Playdar.StatusBar.prototype = {
     increment_requests: function () {
         this.request_count++;
         this.pending_count++;
+        this.show_resolution_status();
+    },
+    cancel_resolve: function () {
+        this.pending_count = 0;
         this.show_resolution_status();
     },
     

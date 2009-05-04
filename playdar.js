@@ -229,18 +229,21 @@ Playdar.Client.prototype = {
                     'name': item_track[0].innerHTML,
                     'element': element
                 };
+                tracks.push(track);
             }
         }
         return tracks;
     },
     
     /**
-     * Playdar.client.autodetect([callback])
+     * Playdar.client.autodetect([callback][, context])
      * - callback (Function): Function to be run for each track to be resolved
      *      Will be passed the track object. If this returns a qid, it will be
      *      passed on to the resolve call.
+     * - context (DOMElement): A DOM node to use to scope the selector
      * 
-     * Attempts to detect any mentions of a track on a page and resolves them.
+     * Attempts to detect any mentions of a track on a page or within a node
+     * and resolves them.
     **/
     autodetect: function (callback, context) {
         var track, qid;

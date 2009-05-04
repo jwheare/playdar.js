@@ -216,19 +216,19 @@ Playdar.Client.prototype = {
     
     // CONTENT RESOLUTION
     
-    parse_microformats: function () {
+    parse_microformats: function (context) {
         var tracks = [];
-        var elements = Playdar.Util.select('.haudio');
+        var elements = Playdar.Util.select('.haudio', context);
         for (var i = 0; i < elements.length; i++) {
             var element = elements[i];
             var item_artist = Playdar.Util.select('.contributor', element);
             var item_track = Playdar.Util.select('.fn', element);
             if (item_track[0] && item_artist[0]) {
-                tracks.push({
+                var track = {
                     'artist': item_artist[0].innerHTML,
                     'name': item_track[0].innerHTML,
                     'element': element
-                });
+                };
             }
         }
         return tracks;
@@ -242,9 +242,9 @@ Playdar.Client.prototype = {
      * 
      * Attempts to detect any mentions of a track on a page and resolves them.
     **/
-    autodetect: function (callback) {
+    autodetect: function (callback, context) {
         var track, qid;
-        var tracks = this.parse_microformats();
+        var tracks = this.parse_microformats(context);
         for (var i = 0; i < tracks.length; i++) {
             track = tracks[i];
             if (callback) {

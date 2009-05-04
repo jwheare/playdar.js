@@ -730,7 +730,7 @@ Playdar.StatusBar.prototype = {
         
         /* Right column
            ------------ */
-        right_col = document.createElement("div");
+        var right_col = document.createElement("div");
         right_col.style.cssFloat = "right";
         right_col.style.padding = "0 8px";
         right_col.style.textAlign = "right";

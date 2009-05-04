@@ -79,8 +79,7 @@ Playdar.Client = function (auth_details, listeners) {
      * A query resolution queue consumed by process_resolution_queue, which is called
      * each time a final_answer is received from the daemon.
     **/
-    this.resolution_queue = [];
-    this.resolutions_in_progress = 0;
+    this.initialise_resolve();
     
     // Setup auth
     this.auth_details = auth_details;
@@ -261,11 +260,9 @@ Playdar.Client.prototype = {
         var query = {
             artist: art,
             album: alb,
-            track: trk
+            track: trk,
+            qid: qid || Playdar.Util.generate_uuid()
         };
-        if (typeof qid !== 'undefined') {
-            query.qid = qid;
-        }
         // Update resolving progress status
         if (Playdar.status_bar) {
             Playdar.status_bar.increment_requests();
@@ -275,43 +272,60 @@ Playdar.Client.prototype = {
         this.process_resolution_queue();
     },
     process_resolution_queue: function() {
-        if (this.resolutions_in_progress >= Playdar.MAX_CONCURRENT_RESOLUTIONS) {
+        if (this.resolutions_in_progress.count >= Playdar.MAX_CONCURRENT_RESOLUTIONS) {
             return false;
         }
-        var available_resolution_slots = Playdar.MAX_CONCURRENT_RESOLUTIONS - this.resolutions_in_progress;
+        var available_resolution_slots = Playdar.MAX_CONCURRENT_RESOLUTIONS - this.resolutions_in_progress.count;
         for (var i = 1; i <= available_resolution_slots; i++) {
             var query = this.resolution_queue.shift();
             if (!query) {
                 break;
             }
-            this.resolutions_in_progress++;
+            this.resolutions_in_progress.queries[query.qid] = query;
+            this.resolutions_in_progress.count++;
             Playdar.Util.loadjs(this.get_url("resolve", "handle_resolution", query));
         }
     },
+    cancel_resolve: function () {
+        this.initialise_resolve();
+    },
+    initialise_resolve: function () {
+        this.resolution_queue = [];
+        this.resolutions_in_progress = {
+            count: 0,
+            queries: {}
+        };
+    },
     handle_resolution: function (response) {
-        this.last_qid = response.qid;
-        this.resolve_qids.push(this.last_qid);
-        this.get_results(response.qid);
+        // Check resolving hasn't been cancelled
+        if (this.resolutions_in_progress.queries[response.qid]) {
+            this.last_qid = response.qid;
+            this.resolve_qids.push(this.last_qid);
+            this.get_results(response.qid);
+        }
     },
     
     // poll results for a query id
     get_results: function (qid) {
-        if (!this.poll_counts[qid]) {
-            this.poll_counts[qid] = 0;
+        // Check resolving hasn't been cancelled
+        if (this.resolutions_in_progress.queries[qid]) {
+            if (!this.poll_counts[qid]) {
+                this.poll_counts[qid] = 0;
+            }
+            this.poll_counts[qid]++;
+            Playdar.Util.loadjs(this.get_url("get_results", "handle_results", {
+                qid: qid,
+                poll: this.poll_counts[qid]
+            }));
         }
-        this.poll_counts[qid]++;
-        Playdar.Util.loadjs(this.get_url("get_results", "handle_results", {
-            qid: qid,
-            poll: this.poll_counts[qid]
-        }));
     },
-    poll_results: function (response, callback, context) {
+    poll_results: function (response, callback, scope) {
         // figure out if we should re-poll, or if the query is solved/failed:
         var final_answer = this.should_stop_polling(response);
-        context = context || this;
+        scope = scope || this;
         if (!final_answer) {
             setTimeout(function () {
-                callback.call(context, response.qid);
+                callback.call(scope, response.qid);
             }, response.refresh_interval);
         }
         return final_answer;
@@ -332,22 +346,26 @@ Playdar.Client.prototype = {
         return false;
     },
     handle_results: function (response) {
-        var final_answer = this.poll_results(response, this.get_results);
-        // Status bar handler
-        if (Playdar.status_bar) {
-            Playdar.status_bar.handle_results(response, final_answer);
-        }
-        // Check to see if we can make some more resolve calls
-        if (final_answer) {
-            this.resolutions_in_progress--;
-            this.process_resolution_queue();
-        }
-        if (response.qid && this.results_handlers[response.qid]) {
-            // try a custom handler registered for this query id
-            this.results_handlers[response.qid](response, final_answer);
-        } else {
-            // fall back to standard handler
-            this.listeners.onResults(response, final_answer);
+        // Check resolving hasn't been cancelled
+        if (this.resolutions_in_progress.queries[response.qid]) {
+            var final_answer = this.poll_results(response, this.get_results);
+            // Status bar handler
+            if (Playdar.status_bar) {
+                Playdar.status_bar.handle_results(response, final_answer);
+            }
+            // Check to see if we can make some more resolve calls
+            if (final_answer) {
+                delete this.resolutions_in_progress.queries[response.qid];
+                this.resolutions_in_progress.count--;
+                this.process_resolution_queue();
+            }
+            if (this.results_handlers[response.qid]) {
+                // try a custom handler registered for this query id
+                this.results_handlers[response.qid](response, final_answer);
+            } else {
+                // fall back to standard handler
+                this.listeners.onResults(response, final_answer);
+            }
         }
     },
     get_last_results: function () {

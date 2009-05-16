@@ -428,9 +428,8 @@ Playdar.Client.prototype = {
      * of extra query parameters.
     **/
     get_url: function (method, jsonp, query_params) {
-        var call_id = new Date().getTime();
-        query_params.call_id = call_id;
         query_params = query_params || {};
+        query_params.call_id = new Date().getTime();
         query_params.method = method;
         if (!query_params.jsonp) {
             if (jsonp.join) { // duck type check for array

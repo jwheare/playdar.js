@@ -180,6 +180,13 @@ Playdar.Client.prototype = {
         + '">' + title + '</a>';
         return html;
     },
+    get_disconnect_link_html: function (text) {
+        text = text || "Disconnect";
+        var html = '<a href="' + this.get_base_url('/settings/auth/')
+            + '" onclick="Playdar.client.clear_auth(); return false;'
+        + '">' + text + '</a>';
+        return html;
+    },
     start_auth: function () {
         if (this.auth_popup === null || this.auth_popup.closed) {
             this.auth_popup = window.open(
@@ -769,7 +776,7 @@ Playdar.StatusBar.prototype = {
                 + '" onclick="Playdar.status_bar.open_queries_popup(); return false;'
             + '">Tracks</a>'
             + ' | '
-            + '<a href="#" onclick="Playdar.client.clear_auth(); return false;">Disconnect</a>';
+            + Playdar.client.get_disconnect_link_html();
         right_col.appendChild(this.playdar_links);
         
         // - Query count

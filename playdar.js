@@ -14,6 +14,7 @@ Playdar = {
         'w': 640,
         'h': 700
     },
+    REFRESH_INTERVAL: null,
     MAX_CONCURRENT_RESOLUTIONS: 5,
     USE_STATUS_BAR: true,
     
@@ -336,7 +337,7 @@ Playdar.Client.prototype = {
         if (!final_answer) {
             setTimeout(function () {
                 callback.call(scope, response.qid);
-            }, response.refresh_interval);
+            }, Playdar.REFRESH_INTERVAL || response.refresh_interval);
         }
         return final_answer;
     },

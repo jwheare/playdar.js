@@ -313,12 +313,20 @@ Playdar.Client.prototype = {
             queries: {}
         };
     },
-    handle_resolution: function (response) {
+    recheck_results: function (qid) {
+        var query = {
+            qid: qid 
+        };
+        this.resolutions_in_progress.queries[qid] = query;
+        this.resolutions_in_progress.count++;
+        this.handle_resolution(query);
+    },
+    handle_resolution: function (query) {
         // Check resolving hasn't been cancelled
-        if (this.resolutions_in_progress.queries[response.qid]) {
-            this.last_qid = response.qid;
+        if (this.resolutions_in_progress.queries[query.qid]) {
+            this.last_qid = query.qid;
             this.resolve_qids.push(this.last_qid);
-            this.get_results(response.qid);
+            this.get_results(query.qid);
         }
     },
     
@@ -420,6 +428,8 @@ Playdar.Client.prototype = {
      * of extra query parameters.
     **/
     get_url: function (method, jsonp, query_params) {
+        var call_id = new Date().getTime();
+        query_params.call_id = call_id;
         query_params = query_params || {};
         query_params.method = method;
         if (!query_params.jsonp) {

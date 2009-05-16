@@ -645,6 +645,12 @@ Playdar.Player.prototype = {
         }
         return false;
     },
+    is_now_playing: function () {
+        if (this.nowplayingid) {
+            return true;
+        }
+        return false;
+    },
     toggle_nowplaying: function () {
         if (this.nowplayingid) {
             this.play_stream(this.nowplayingid);

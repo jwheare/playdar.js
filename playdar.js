@@ -638,6 +638,13 @@ Playdar.Player.prototype = {
             Playdar.status_bar.stop_handler();
         }
     },
+    stop_stream: function (sid) {
+        if (sid && sid == this.nowplayingid) {
+            this.stop_all();
+            return true;
+        }
+        return false;
+    },
     toggle_nowplaying: function () {
         if (this.nowplayingid) {
             this.play_stream(this.nowplayingid);

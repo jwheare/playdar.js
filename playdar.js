@@ -165,6 +165,12 @@ Playdar.Client.prototype = {
             Playdar.status_bar.offline();
         }
     },
+    is_authed: function () {
+        if (this.auth_token) {
+            return true;
+        }
+        return false;
+    },
     get_revoke_url: function () {
         return this.get_base_url("/settings/auth/", {
             revoke: this.auth_token

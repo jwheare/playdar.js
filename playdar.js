@@ -195,7 +195,7 @@ Playdar.Client.prototype = {
         return html;
     },
     start_auth: function () {
-        if (this.auth_popup === null || this.auth_popup.closed) {
+        if (!this.auth_popup || this.auth_popup.closed) {
             this.auth_popup = window.open(
                 this.get_auth_url(),
                 Playdar.AUTH_POPUP_NAME,
@@ -214,8 +214,9 @@ Playdar.Client.prototype = {
     
     auth_callback: function (token) {
         Playdar.Util.setcookie('auth', token, 365);
-        if (this.auth_popup !== null && !this.auth_popup.closed) {
+        if (this.auth_popup && !this.auth_popup.closed) {
             this.auth_popup.close();
+            this.auth_popup = null;
         }
         this.auth_token = token;
         this.stat();

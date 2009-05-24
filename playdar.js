@@ -17,6 +17,7 @@ Playdar = {
     REFRESH_INTERVAL: null,
     MAX_CONCURRENT_RESOLUTIONS: 5,
     USE_STATUS_BAR: true,
+    USE_SCROBBLER: true,
     
     client: null,
     status_bar: null,
@@ -587,8 +588,9 @@ Playdar.Player = function (soundmanager) {
     this.streams = {};
     this.nowplayingid = null;
     this.soundmanager = soundmanager;
-    
-    new Playdar.Scrobbler();
+    if (Playdar.USE_SCROBBLER) {
+        new Playdar.Scrobbler();
+    }
 };
 Playdar.Player.prototype = {
     register_stream: function (result, options) {

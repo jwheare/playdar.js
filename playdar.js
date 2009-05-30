@@ -61,6 +61,9 @@ Playdar.DefaultListeners = {
     },
     onRQL: function (response) {
         // RQL playlist response
+    },
+    onResolveIdle: function () {
+        // Resolution queue is empty and nothing in progress
     }
 };
 
@@ -291,15 +294,21 @@ Playdar.Client.prototype = {
         if (this.resolutions_in_progress.count >= Playdar.MAX_CONCURRENT_RESOLUTIONS) {
             return false;
         }
-        var available_resolution_slots = Playdar.MAX_CONCURRENT_RESOLUTIONS - this.resolutions_in_progress.count;
-        for (var i = 1; i <= available_resolution_slots; i++) {
-            var query = this.resolution_queue.shift();
-            if (!query) {
-                break;
+        // Check we've got nothing queued up or in progress
+        var resolution_count = this.resolution_queue.length + this.resolutions_in_progress.count;
+        if (resolution_count) {
+            var available_resolution_slots = Playdar.MAX_CONCURRENT_RESOLUTIONS - this.resolutions_in_progress.count;
+            for (var i = 1; i <= available_resolution_slots; i++) {
+                var query = this.resolution_queue.shift();
+                if (!query) {
+                    break;
+                }
+                this.resolutions_in_progress.queries[query.qid] = query;
+                this.resolutions_in_progress.count++;
+                Playdar.Util.loadjs(this.get_url("resolve", "handle_resolution", query));
             }
-            this.resolutions_in_progress.queries[query.qid] = query;
-            this.resolutions_in_progress.count++;
-            Playdar.Util.loadjs(this.get_url("resolve", "handle_resolution", query));
+        } else {
+            this.listeners.onResolveIdle();
         }
     },
     cancel_resolve: function () {
@@ -380,18 +389,18 @@ Playdar.Client.prototype = {
             if (Playdar.status_bar) {
                 Playdar.status_bar.handle_results(response, final_answer);
             }
-            // Check to see if we can make some more resolve calls
-            if (final_answer) {
-                delete this.resolutions_in_progress.queries[response.qid];
-                this.resolutions_in_progress.count--;
-                this.process_resolution_queue();
-            }
             if (this.results_handlers[response.qid]) {
                 // try a custom handler registered for this query id
                 this.results_handlers[response.qid](response, final_answer);
             } else {
                 // fall back to standard handler
                 this.listeners.onResults(response, final_answer);
+            }
+            // Check to see if we can make some more resolve calls
+            if (final_answer) {
+                delete this.resolutions_in_progress.queries[response.qid];
+                this.resolutions_in_progress.count--;
+                this.process_resolution_queue();
             }
         }
     },

@@ -275,11 +275,12 @@ Playdar.Client.prototype = {
         }
     },
     
-    resolve: function (art, alb, trk, qid) {
+    resolve: function (artist, album, track, qid, url) {
         var query = {
-            artist: art,
-            album: alb,
-            track: trk,
+            artist: artist || '',
+            album: album || '',
+            track: track || '',
+            url: url || '',
             qid: qid || Playdar.Util.generate_uuid()
         };
         // Update resolving progress status

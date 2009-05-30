@@ -240,8 +240,8 @@ Playdar.Client.prototype = {
             var item_track = Playdar.Util.select('.fn', element);
             if (item_track[0] && item_artist[0]) {
                 var track = {
-                    'artist': item_artist[0].innerHTML,
-                    'name': item_track[0].innerHTML,
+                    'artist': item_artist[0].title || item_artist[0].innerHTML,
+                    'name': item_track[0].title || item_track[0].innerHTML,
                     'element': element
                 };
                 tracks.push(track);
@@ -589,6 +589,7 @@ Playdar.Player = function (soundmanager) {
     this.streams = {};
     this.nowplayingid = null;
     this.soundmanager = soundmanager;
+    
     if (Playdar.USE_SCROBBLER) {
         new Playdar.Scrobbler();
     }

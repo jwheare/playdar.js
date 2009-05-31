@@ -1130,6 +1130,18 @@ Playdar.Util = {
         };
     },
     
+    // http://ejohn.org/blog/flexible-javascript-events
+    addEvent: function (obj, type, fn) {
+        if (obj.attachEvent) {
+            obj['e'+type+fn] = fn;
+            obj[type+fn] = function () {
+                obj['e'+type+fn](window.event);
+            };
+            obj.attachEvent('on'+type, obj[type+fn]);
+        } else {
+            obj.addEventListener(type, fn, false);
+        }
+    },
     // Event target helper
     getTarget: function (e) {
         e = e || window.event;
@@ -1157,6 +1169,12 @@ Playdar.Util = {
     },
     null_callback: function () {}
 };
+
+Playdar.Util.addEvent(window, 'unload', function () {
+    if (Playdar.scrobbler) {
+        Playdar.scrobbler.stop();
+    }
+});
 
 /*!
  * Sizzle CSS Selector Engine - v1.0

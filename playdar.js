@@ -144,6 +144,11 @@ Playdar.Client.prototype = {
             new Playdar.StatusBar();
             Playdar.status_bar.handle_stat(response);
         }
+        // Setup scrobbling if we haven't already, if it's enabled globally and if the daemon
+        // has it enabled
+        if (!Playdar.scrobbler && Playdar.USE_SCROBBLER && response.capabilities.audioscrobbler) {
+            new Playdar.Scrobbler();
+        }
         this.listeners.onStat(response);
         
         if (response.authenticated) {
@@ -599,10 +604,6 @@ Playdar.Player = function (soundmanager) {
     this.streams = {};
     this.nowplayingid = null;
     this.soundmanager = soundmanager;
-    
-    if (Playdar.USE_SCROBBLER) {
-        new Playdar.Scrobbler();
-    }
 };
 Playdar.Player.prototype = {
     register_stream: function (result, options) {

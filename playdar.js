@@ -61,6 +61,9 @@ Playdar.DefaultListeners = {
     },
     onRQL: function (response) {
         // RQL playlist response
+    },
+    onResolveIdle: function () {
+        // Resolution queue is empty and nothing in progress
     }
 };
 
@@ -140,6 +143,11 @@ Playdar.Client.prototype = {
         if (Playdar.USE_STATUS_BAR) {
             new Playdar.StatusBar();
             Playdar.status_bar.handle_stat(response);
+        }
+        // Setup scrobbling if we haven't already, if it's enabled globally and if the daemon
+        // has it enabled
+        if (!Playdar.scrobbler && Playdar.USE_SCROBBLER && response.capabilities.audioscrobbler) {
+            new Playdar.Scrobbler();
         }
         this.listeners.onStat(response);
         
@@ -240,8 +248,8 @@ Playdar.Client.prototype = {
             var item_track = Playdar.Util.select('.fn', element);
             if (item_track[0] && item_artist[0]) {
                 var track = {
-                    'artist': item_artist[0].innerHTML,
-                    'name': item_track[0].innerHTML,
+                    'artist': item_artist[0].title || item_artist[0].innerHTML,
+                    'name': item_track[0].title || item_track[0].innerHTML,
                     'element': element
                 };
                 tracks.push(track);
@@ -272,11 +280,12 @@ Playdar.Client.prototype = {
         }
     },
     
-    resolve: function (art, alb, trk, qid) {
+    resolve: function (artist, album, track, qid, url) {
         var query = {
-            artist: art,
-            album: alb,
-            track: trk,
+            artist: artist || '',
+            album: album || '',
+            track: track || '',
+            url: url || '',
             qid: qid || Playdar.Util.generate_uuid()
         };
         // Update resolving progress status
@@ -291,15 +300,21 @@ Playdar.Client.prototype = {
         if (this.resolutions_in_progress.count >= Playdar.MAX_CONCURRENT_RESOLUTIONS) {
             return false;
         }
-        var available_resolution_slots = Playdar.MAX_CONCURRENT_RESOLUTIONS - this.resolutions_in_progress.count;
-        for (var i = 1; i <= available_resolution_slots; i++) {
-            var query = this.resolution_queue.shift();
-            if (!query) {
-                break;
+        // Check we've got nothing queued up or in progress
+        var resolution_count = this.resolution_queue.length + this.resolutions_in_progress.count;
+        if (resolution_count) {
+            var available_resolution_slots = Playdar.MAX_CONCURRENT_RESOLUTIONS - this.resolutions_in_progress.count;
+            for (var i = 1; i <= available_resolution_slots; i++) {
+                var query = this.resolution_queue.shift();
+                if (!query) {
+                    break;
+                }
+                this.resolutions_in_progress.queries[query.qid] = query;
+                this.resolutions_in_progress.count++;
+                Playdar.Util.loadjs(this.get_url("resolve", "handle_resolution", query));
             }
-            this.resolutions_in_progress.queries[query.qid] = query;
-            this.resolutions_in_progress.count++;
-            Playdar.Util.loadjs(this.get_url("resolve", "handle_resolution", query));
+        } else {
+            this.listeners.onResolveIdle();
         }
     },
     cancel_resolve: function () {
@@ -380,18 +395,18 @@ Playdar.Client.prototype = {
             if (Playdar.status_bar) {
                 Playdar.status_bar.handle_results(response, final_answer);
             }
-            // Check to see if we can make some more resolve calls
-            if (final_answer) {
-                delete this.resolutions_in_progress.queries[response.qid];
-                this.resolutions_in_progress.count--;
-                this.process_resolution_queue();
-            }
             if (this.results_handlers[response.qid]) {
                 // try a custom handler registered for this query id
                 this.results_handlers[response.qid](response, final_answer);
             } else {
                 // fall back to standard handler
                 this.listeners.onResults(response, final_answer);
+            }
+            // Check to see if we can make some more resolve calls
+            if (final_answer) {
+                delete this.resolutions_in_progress.queries[response.qid];
+                this.resolutions_in_progress.count--;
+                this.process_resolution_queue();
             }
         }
     },
@@ -589,9 +604,6 @@ Playdar.Player = function (soundmanager) {
     this.streams = {};
     this.nowplayingid = null;
     this.soundmanager = soundmanager;
-    if (Playdar.USE_SCROBBLER) {
-        new Playdar.Scrobbler();
-    }
 };
 Playdar.Player.prototype = {
     register_stream: function (result, options) {
@@ -1119,6 +1131,18 @@ Playdar.Util = {
         };
     },
     
+    // http://ejohn.org/blog/flexible-javascript-events
+    addEvent: function (obj, type, fn) {
+        if (obj.attachEvent) {
+            obj['e'+type+fn] = fn;
+            obj[type+fn] = function () {
+                obj['e'+type+fn](window.event);
+            };
+            obj.attachEvent('on'+type, obj[type+fn]);
+        } else {
+            obj.addEventListener(type, fn, false);
+        }
+    },
     // Event target helper
     getTarget: function (e) {
         e = e || window.event;
@@ -1146,6 +1170,12 @@ Playdar.Util = {
     },
     null_callback: function () {}
 };
+
+Playdar.Util.addEvent(window, 'unload', function () {
+    if (Playdar.scrobbler) {
+        Playdar.scrobbler.stop();
+    }
+});
 
 /*!
  * Sizzle CSS Selector Engine - v1.0

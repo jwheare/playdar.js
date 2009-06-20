@@ -182,7 +182,8 @@ Playdar.Client.prototype = {
     },
     get_revoke_url: function () {
         return this.get_base_url("/settings/auth/", {
-            revoke: this.auth_token
+            revoke: this.auth_token,
+            jsonp: 'Playdar.Util.null_callback'
         });
     },
     get_auth_url: function () {

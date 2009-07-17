@@ -568,32 +568,35 @@ Playdar.Scrobbler.prototype = {
         var scrobbler = this;
         return {
             onplay: function () {
-                scrobbler.start(result.artist, result.track, result.album, result.duration);
-                Playdar.Util.apply_property_function(options, 'onplay', this, arguments);
+                // Don't scrobbler start until after prebuffering
+                this.scrobbleStart = true;
+                Playdar.Util.call_optional(options, 'onplay', this, arguments);
             },
             onbufferchange: function () {
-                if (this.isBuffering) {
-                    scrobbler.pause();
-                } else {
-                    scrobbler.resume();
+                if (!this.isBuffering) {
+                    // First pre-buffer after start has ended
+                    if (this.scrobbleStart) {
+                        this.scrobbleStart = false;
+                        scrobbler.start(result.artist, result.track, result.album, result.duration);
+                    }
                 }
-                Playdar.Util.apply_property_function(options, 'onbufferchange', this, arguments);
+                Playdar.Util.call_optional(options, 'onbufferchange', this, arguments);
             },
             onpause: function () {
                 scrobbler.pause();
-                Playdar.Util.apply_property_function(options, 'onpause', this, arguments);
+                Playdar.Util.call_optional(options, 'onpause', this, arguments);
             },
             onresume: function () {
                 scrobbler.resume();
-                Playdar.Util.apply_property_function(options, 'onresume', this, arguments);
+                Playdar.Util.call_optional(options, 'onresume', this, arguments);
             },
             onstop: function () {
                 scrobbler.stop();
-                Playdar.Util.apply_property_function(options, 'onstop', this, arguments);
+                Playdar.Util.call_optional(options, 'onstop', this, arguments);
             },
             onfinish: function () {
                 scrobbler.stop();
-                Playdar.Util.apply_property_function(options, 'onfinish', this, arguments);
+                Playdar.Util.call_optional(options, 'onfinish', this, arguments);
             }
         };
     }
@@ -929,11 +932,11 @@ Playdar.StatusBar.prototype = {
         return {
             whileplaying: function () {
                 Playdar.status_bar.playing_handler(this);
-                Playdar.Util.apply_property_function(options, 'whileplaying', this, arguments);
+                Playdar.Util.call_optional(options, 'whileplaying', this, arguments);
             },
             whileloading: function () {
                 Playdar.status_bar.loading_handler(this);
-                Playdar.Util.apply_property_function(options, 'whileloading', this, arguments);
+                Playdar.Util.call_optional(options, 'whileloading', this, arguments);
             }
         };
     },
@@ -1158,7 +1161,10 @@ Playdar.Util = {
         return destination;
     },
     
-    apply_property_function: function (obj, property, scope, args) {
+    /**
+     * Calls the named property on the passed object with given scope and arguments
+    **/
+    call_optional: function (obj, property, scope, args) {
         if (obj && obj[property]) {
             obj[property].apply(scope, args);
         }

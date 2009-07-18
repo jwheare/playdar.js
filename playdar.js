@@ -1,5 +1,5 @@
 Playdar = {
-    VERSION: "0.4.2",
+    VERSION: "0.4.3",
     SERVER_ROOT: "localhost",
     SERVER_PORT: "8888",
     STATIC_HOST: "http://www.playdar.org",
@@ -28,6 +28,15 @@ Playdar = {
     },
     setup_player: function (soundmanager) {
         new Playdar.Player(soundmanager);
+    },
+    unload: function () {
+        if (Playdar.player) {
+            // Stop the music
+            Playdar.player.stop_current(true);
+        } else if (Playdar.scrobbler) {
+            // Stop scrobbling
+            Playdar.scrobbler.stop();
+        }
     }
 };
 
@@ -158,10 +167,7 @@ Playdar.Client.prototype = {
         }
     },
     clear_auth: function () {
-        // Stop the music
-        if (Playdar.player) {
-            Playdar.player.stop_all();
-        }
+        Playdar.unload();
         // Revoke auth at the server
         Playdar.Util.loadjs(this.get_revoke_url());
         // Clear auth token
@@ -564,39 +570,36 @@ Playdar.Scrobbler.prototype = {
     resume: function () {
         Playdar.Util.loadjs(this.get_url("resume"));
     },
-    get_sound_options: function (result, options) {
+    get_sound_callbacks: function (result) {
         var scrobbler = this;
         return {
-            onplay: function () {
-                // Don't scrobbler start until after prebuffering
-                this.scrobbleStart = true;
-                Playdar.Util.call_optional(options, 'onplay', this, arguments);
-            },
-            onbufferchange: function () {
-                if (!this.isBuffering) {
-                    // First pre-buffer after start has ended
-                    if (this.scrobbleStart) {
-                        this.scrobbleStart = false;
-                        scrobbler.start(result.artist, result.track, result.album, result.duration);
-                    }
+            onload: function () {
+                if (this.readyState == 2) { // failed/error
+                    scrobbler.stop();
+                    this.unload();
                 }
-                Playdar.Util.call_optional(options, 'onbufferchange', this, arguments);
+            },
+            onplay: function () {
+                // scrobbler.start isn't called until the first whileplaying callback
+                this.scrobbleStart = true;
             },
             onpause: function () {
                 scrobbler.pause();
-                Playdar.Util.call_optional(options, 'onpause', this, arguments);
             },
-            onresume: function () {
+            onresume: function () { 
                 scrobbler.resume();
-                Playdar.Util.call_optional(options, 'onresume', this, arguments);
-            },
-            onstop: function () {
-                scrobbler.stop();
-                Playdar.Util.call_optional(options, 'onstop', this, arguments);
             },
             onfinish: function () {
-                scrobbler.stop();
-                Playdar.Util.call_optional(options, 'onfinish', this, arguments);
+                if (!this.chained) {
+                    scrobbler.stop();
+                }
+            },
+            whileplaying: function () {
+                // At this point we've finished the initial buffer and are actually playing
+                if (this.scrobbleStart) {
+                    this.scrobbleStart = false;
+                    scrobbler.start(result.artist, result.track, result.album, result.duration);
+                }
             }
         };
     }
@@ -611,6 +614,9 @@ Playdar.Player = function (soundmanager) {
 };
 Playdar.Player.prototype = {
     register_stream: function (result, options) {
+        if (this.streams[result.sid]) {
+            return false;
+        }
         // Register result
         this.streams[result.sid] = result;
         
@@ -619,20 +625,26 @@ Playdar.Player.prototype = {
             url: Playdar.client.get_stream_url(result.sid)
         }, options);
         
+        var callback_options = [options];
         // Wrap sound progress callbacks with status bar
         if (Playdar.status_bar) {
-            Playdar.Util.extend_object(sound_options, Playdar.status_bar.get_sound_options(result, options));
+            callback_options.push(Playdar.status_bar.get_sound_callbacks(result));
         }
         // Wrap sound lifecycle callbacks in scrobbling calls
         if (Playdar.scrobbler) {
-            Playdar.Util.extend_object(sound_options, Playdar.scrobbler.get_sound_options(result, options));
+            callback_options.push(Playdar.scrobbler.get_sound_callbacks(result));
         }
-        return this.soundmanager.createSound(sound_options);
+        Playdar.Util.extend_object(sound_options, Playdar.Util.merge_callback_options(callback_options));
+        var sound = this.soundmanager.createSound(sound_options);
+        if (sound_options.chained) {
+            sound.chained = sound_options.chained;
+        }
+        return sound;
     },
     play_stream: function (sid) {
         var sound = this.soundmanager.getSoundById(sid);
         if (this.nowplayingid != sid) {
-            this.stop_all();
+            this.stop_current();
             if (sound.playState == 0) {
                 this.nowplayingid = sid;
                 // Update status bar
@@ -645,7 +657,12 @@ Playdar.Player.prototype = {
         sound.togglePause();
         return sound;
     },
-    stop_all: function () {
+    stop_current: function (hard) {
+        if (hard) {
+            if (Playdar.scrobbler) {
+                Playdar.scrobbler.stop();
+            }
+        }
         if (this.nowplayingid) {
             var sound = this.soundmanager.getSoundById(this.nowplayingid);
             sound.stop();
@@ -654,12 +671,12 @@ Playdar.Player.prototype = {
         }
         // Update status bar
         if (Playdar.status_bar) {
-            Playdar.status_bar.stop_handler();
+            Playdar.status_bar.stop_current();
         }
     },
     stop_stream: function (sid) {
         if (sid && sid == this.nowplayingid) {
-            this.stop_all();
+            this.stop_current();
             return true;
         }
         return false;
@@ -928,15 +945,13 @@ Playdar.StatusBar.prototype = {
         this.show_resolution_status();
     },
     
-    get_sound_options: function (result, options) {
+    get_sound_callbacks: function (result) {
         return {
             whileplaying: function () {
                 Playdar.status_bar.playing_handler(this);
-                Playdar.Util.call_optional(options, 'whileplaying', this, arguments);
             },
             whileloading: function () {
                 Playdar.status_bar.loading_handler(this);
-                Playdar.Util.call_optional(options, 'whileloading', this, arguments);
             }
         };
     },
@@ -973,7 +988,7 @@ Playdar.StatusBar.prototype = {
         var buffered = sound.bytesLoaded/sound.bytesTotal;
         this.bufferhead.style.width = Math.round(buffered * this.progress_bar_width) + "px";
     },
-    stop_handler: function () {
+    stop_current: function () {
         this.playback.style.display = "none";
         this.status.style.display = "";
         
@@ -1161,13 +1176,42 @@ Playdar.Util = {
         return destination;
     },
     
-    /**
-     * Calls the named property on the passed object with given scope and arguments
-    **/
-    call_optional: function (obj, property, scope, args) {
-        if (obj && obj[property]) {
-            obj[property].apply(scope, args);
+    merge_callback_options: function (callback_options) {
+        var option_map = {};
+        var keys = [];
+        var i, options, option_name;
+        // Loop through an array of option objects
+        for (i = 0; i < callback_options.length; i++) {
+            options = callback_options[i];
+            // Process callback functions in each object
+            for (option_name in options) {
+                if (typeof (options[option_name]) == 'function') {
+                    // Collect all matching option callbacks into one callback
+                    if (!option_map[option_name]) {
+                        keys.push(option_name);
+                        option_map[option_name] = [];
+                    }
+                    option_map[option_name].push(options);
+                }
+            }
         }
+        var final_options = {};
+        var key, mapped_options;
+        // Merge the mapped callback options
+        for (i = 0; i < keys.length; i++) {
+            var key = keys[i];
+            // Pass in the scope because closures don't really work
+            // with shared variables in a loop
+            final_options[key] = (function (key, mapped_options) {
+                return function () {
+                    // Call each function that's been mapped to this property
+                    for (var j = 0; j < mapped_options.length; j++) {
+                        mapped_options[j][key].apply(this, arguments);
+                    }
+                };
+            })(key, option_map[key]);
+        }
+        return final_options;
     },
     
     log: function (response) {
@@ -1178,11 +1222,7 @@ Playdar.Util = {
     null_callback: function () {}
 };
 
-Playdar.Util.addEvent(window, 'unload', function () {
-    if (Playdar.scrobbler) {
-        Playdar.scrobbler.stop();
-    }
-});
+Playdar.Util.addEvent(window, 'unload', Playdar.unload);
 
 /*!
  * Sizzle CSS Selector Engine - v1.0

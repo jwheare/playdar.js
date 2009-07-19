@@ -838,12 +838,7 @@ Playdar.StatusBar.prototype = {
         this.playdar_links = document.createElement("p");
         this.playdar_links.style.margin = 0;
         
-        this.playdar_links.innerHTML = '<a href="' +  this.get_queries_popup_url()
-                + '" target="' + Playdar.QUERIES_POPUP_NAME
-                + '" onclick="Playdar.status_bar.open_queries_popup(); return false;'
-            + '">Tracks</a>'
-            + ' | '
-            + Playdar.client.get_disconnect_link_html();
+        this.playdar_links.innerHTML = Playdar.client.get_disconnect_link_html();
         right_col.appendChild(this.playdar_links);
         
         // - Query count

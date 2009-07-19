@@ -495,6 +495,7 @@ Playdar.Boffin = function () {
 Playdar.Boffin.prototype = {
     get_url: function (method, query_params) {
         query_params = query_params || {};
+        query_params.call_id = new Date().getTime();
         query_params.jsonp = query_params.jsonp || 'Playdar.Util.null_callback';
         Playdar.client.add_auth_token(query_params);
         return Playdar.client.get_base_url("/boffin/" + method, query_params);
@@ -536,6 +537,7 @@ Playdar.Scrobbler = function () {
 Playdar.Scrobbler.prototype = {
     get_url: function (method, query_params) {
         query_params = query_params || {};
+        query_params.call_id = new Date().getTime();
         query_params.jsonp = query_params.jsonp || 'Playdar.Util.null_callback';
         Playdar.client.add_auth_token(query_params);
         return Playdar.client.get_base_url("/audioscrobbler/" + method, query_params);

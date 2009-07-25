@@ -470,6 +470,7 @@ Playdar.Client.prototype = {
         if (this.auth_token) {
             query_params.auth = this.auth_token;
         }
+        return query_params;
     },
     
     // turn a source id into a stream url
@@ -1219,7 +1220,7 @@ Playdar.Util = {
     null_callback: function () {}
 };
 
-Playdar.Util.addEvent(window, 'unload', Playdar.unload);
+Playdar.Util.addEvent(window, 'beforeunload', Playdar.unload);
 
 /*!
  * Sizzle CSS Selector Engine - v1.0

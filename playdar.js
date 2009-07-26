@@ -980,6 +980,9 @@ Playdar.StatusBar.prototype = {
         }
         var portion_played = sound.position / duration;
         this.playhead.style.width = Math.round(portion_played * this.progress_bar_width) + "px";
+        // Call the loading handler too because the sound may have fully loaded while
+        // we were playing a different track
+        this.loading_handler(sound);
     },
     loading_handler: function (sound) {
         // Update the loading progress bar

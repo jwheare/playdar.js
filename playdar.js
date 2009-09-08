@@ -1,7 +1,7 @@
 Playdar = {
-    VERSION: "0.4.3",
+    VERSION: "0.4.4",
     SERVER_ROOT: "localhost",
-    SERVER_PORT: "8888",
+    SERVER_PORT: "60210",
     STATIC_HOST: "http://www.playdar.org",
     STAT_TIMEOUT: 2000,
     AUTH_POPUP_NAME: "PD_auth",

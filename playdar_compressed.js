@@ -109,7 +109,7 @@ return true;
 }
 return false;
 },get_revoke_url:function(){
-return this.get_base_url("/settings/auth/",{revoke:this.auth_token,jsonp:"Playdar.Util.null_callback"});
+return this.get_base_url("/authcodes",{revoke:this.auth_token,jsonp:"Playdar.Util.null_callback"});
 },get_auth_url:function(){
 return this.get_base_url("/auth_1/",this.auth_details);
 },get_auth_link_html:function(_11){

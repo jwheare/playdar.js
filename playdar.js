@@ -14,7 +14,7 @@ Playdar = {
         'w': 640,
         'h': 700
     },
-    REFRESH_INTERVAL: null,
+    MAX_POLLS: 4,
     MAX_CONCURRENT_RESOLUTIONS: 5,
     USE_STATUS_BAR: true,
     USE_SCROBBLER: true,
@@ -375,21 +375,23 @@ Playdar.Client.prototype = {
         if (!final_answer) {
             setTimeout(function () {
                 callback.call(scope, response.qid);
-            }, Playdar.REFRESH_INTERVAL || response.refresh_interval);
+            }, response.poll_interval || response.refresh_interval);
+            // response.refresh_interval is deprecated.
         }
         return final_answer;
     },
     should_stop_polling: function (response) {
-        // Stop if we've exceeded our refresh limit
-        if (response.refresh_interval <= 0) {
+        // Stop if the server tells us to
+        // response.refresh_interval is deprecated. (undefined <= 0 === false)
+        if (response.poll_interval <= 0 || response.refresh_interval <= 0) {
             return true;
         }
         // Stop if the query is solved
         if (response.query.solved == true) {
             return true;
         }
-        // Stop if we've exceeded 4 poll requests
-        if (this.poll_counts[response.qid] >= 4) {
+        // Stop if we've exceeded our poll limit
+        if (this.poll_counts[response.qid] >= (response.poll_limit || Playdar.MAX_POLLS)) {
             return true;
         }
         return false;

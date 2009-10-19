@@ -400,7 +400,7 @@ if(this.streams[_58.sid]){
 return false;
 }
 this.streams[_58.sid]=_58;
-var _5a=Playdar.Util.extend_object({id:_58.sid,url:Playdar.client.get_stream_url(_58.sid),isMovieStar:true},_59);
+var _5a=Playdar.Util.extend_object({id:_58.sid,url:Playdar.client.get_stream_url(_58.sid),isMovieStar:(_58.mimetype=="audio/mp4")},_59);
 var _5b=[_59];
 if(Playdar.status_bar){
 _5b.push(Playdar.status_bar.get_sound_callbacks(_58));
@@ -409,9 +409,11 @@ if(Playdar.scrobbler){
 _5b.push(Playdar.scrobbler.get_sound_callbacks(_58));
 }
 Playdar.Util.extend_object(_5a,Playdar.Util.merge_callback_options(_5b));
+try{
 var _5c=this.soundmanager.createSound(_5a);
-if(_5a.chained){
-_5c.chained=_5a.chained;
+}
+catch(e){
+return false;
 }
 return _5c;
 },play_stream:function(sid){

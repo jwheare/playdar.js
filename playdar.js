@@ -634,7 +634,7 @@ Playdar.Player.prototype = {
         var sound_options = Playdar.Util.extend_object({
             id: result.sid,
             url: Playdar.client.get_stream_url(result.sid),
-            isMovieStar: true
+            isMovieStar: (result.mimetype == "audio/mp4")
         }, options);
         
         var callback_options = [options];
@@ -647,9 +647,10 @@ Playdar.Player.prototype = {
             callback_options.push(Playdar.scrobbler.get_sound_callbacks(result));
         }
         Playdar.Util.extend_object(sound_options, Playdar.Util.merge_callback_options(callback_options));
-        var sound = this.soundmanager.createSound(sound_options);
-        if (sound_options.chained) {
-            sound.chained = sound_options.chained;
+        try {
+            var sound = this.soundmanager.createSound(sound_options);
+        } catch (e) {
+            return false;
         }
         return sound;
     },

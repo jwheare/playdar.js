@@ -633,7 +633,8 @@ Playdar.Player.prototype = {
         
         var sound_options = Playdar.Util.extend_object({
             id: result.sid,
-            url: Playdar.client.get_stream_url(result.sid)
+            url: Playdar.client.get_stream_url(result.sid),
+            isMovieStar: true
         }, options);
         
         var callback_options = [options];

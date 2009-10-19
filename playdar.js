@@ -129,7 +129,7 @@ Playdar.Client.prototype = {
     // INIT / STAT / AUTH
     
     init: function () {
-        if (!this.auth_token) {
+        if (!this.is_authed()) {
             this.auth_token = Playdar.Util.getcookie('auth');
         }
         this.stat();
@@ -162,7 +162,7 @@ Playdar.Client.prototype = {
                 new Playdar.Scrobbler();
             }
             this.listeners.onAuth();
-        } else if (this.auth_token) {
+        } else if (this.is_authed()) {
             this.clear_auth();
         }
     },
@@ -276,6 +276,9 @@ Playdar.Client.prototype = {
      * and resolves them.
     **/
     autodetect: function (callback, context) {
+        if (!this.is_authed()) {
+            return false;
+        }
         var track, qid;
         var tracks = this.parse_microformats(context);
         for (var i = 0; i < tracks.length; i++) {
@@ -288,6 +291,9 @@ Playdar.Client.prototype = {
     },
     
     resolve: function (artist, album, track, qid, url) {
+        if (!this.is_authed()) {
+            return false;
+        }
         var query = {
             artist: artist || '',
             album: album || '',
@@ -469,7 +475,7 @@ Playdar.Client.prototype = {
     },
     
     add_auth_token: function (query_params) {
-        if (this.auth_token) {
+        if (this.is_authed()) {
             query_params.auth = this.auth_token;
         }
         return query_params;

@@ -4,12 +4,13 @@ Playdar = {
     SERVER_PORT: "60210",
     STATIC_HOST: "http://www.playdar.org",
     STAT_TIMEOUT: 2000,
-    AUTH_POPUP_NAME: "PD_auth",
+    AUTH_COOKIE_NAME: "Playdar.Auth",
+    AUTH_POPUP_NAME: "Playdar.AuthPopup",
     AUTH_POPUP_SIZE: {
         'w': 500,
         'h': 260
     },
-    QUERIES_POPUP_NAME: "PD_queries",
+    QUERIES_POPUP_NAME: "Playdar.QueriesPopup",
     QUERIES_POPUP_SIZE: {
         'w': 640,
         'h': 700
@@ -130,7 +131,7 @@ Playdar.Client.prototype = {
     
     init: function () {
         if (!this.is_authed()) {
-            this.auth_token = Playdar.Util.getcookie('auth');
+            this.auth_token = Playdar.Util.getcookie(Playdar.AUTH_COOKIE_NAME);
         }
         this.stat();
     },
@@ -172,7 +173,7 @@ Playdar.Client.prototype = {
         Playdar.Util.loadjs(this.get_revoke_url());
         // Clear auth token
         this.auth_token = false;
-        Playdar.Util.deletecookie('auth');
+        Playdar.Util.deletecookie(Playdar.AUTH_COOKIE_NAME);
         // Callback
         this.listeners.onAuthClear();
         // Update status bar
@@ -229,7 +230,7 @@ Playdar.Client.prototype = {
     },
     
     auth_callback: function (token) {
-        Playdar.Util.setcookie('auth', token, 365);
+        Playdar.Util.setcookie(Playdar.AUTH_COOKIE_NAME, token, 365);
         if (this.auth_popup && !this.auth_popup.closed) {
             this.auth_popup.close();
             this.auth_popup = null;
@@ -1092,10 +1093,10 @@ Playdar.Util = {
         } else {
             var expires = "";
         }
-        document.cookie = "PD_" + name + "=" + value + expires + "; path=/";
+        document.cookie = name + "=" + value + expires + "; path=/";
     },
     getcookie: function (name) {
-        var namekey = "PD_" + name + "=";
+        var namekey = name + "=";
         var cookies = document.cookie.split(';');
         for (var i = 0; i < cookies.length;i++) {
             var c = cookies[i];

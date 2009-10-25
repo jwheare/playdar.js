@@ -624,6 +624,14 @@ Playdar.Player = function (soundmanager) {
     this.nowplayingid = null;
     this.soundmanager = soundmanager;
 };
+
+Playdar.Player.MPEG4_MIMETYPES = {
+    "audio/mp4": true,
+    "audio/aac": true,
+    "audio/x-aac": true,
+    "audio/x-m4a": true,
+    "audio/x-m4b": true
+};
 Playdar.Player.prototype = {
     register_stream: function (result, options) {
         if (this.streams[result.sid]) {
@@ -635,7 +643,8 @@ Playdar.Player.prototype = {
         var sound_options = Playdar.Util.extend_object({
             id: result.sid,
             url: Playdar.client.get_stream_url(result.sid),
-            isMovieStar: (result.mimetype == "audio/mp4")
+            isMovieStar: Playdar.Player.MPEG4_MIMETYPES[result.mimetype] == true,
+            bufferTime: 2
         }, options);
         
         var callback_options = [options];

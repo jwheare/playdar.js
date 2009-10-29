@@ -395,12 +395,13 @@ this.streams={};
 this.nowplayingid=null;
 this.soundmanager=_4a;
 };
+Playdar.Player.MPEG4_MIMETYPES={"audio/mp4":true,"audio/aac":true,"audio/x-aac":true,"audio/x-m4a":true,"audio/x-m4b":true};
 Playdar.Player.prototype={register_stream:function(_4b,_4c){
 if(this.streams[_4b.sid]){
 return false;
 }
 this.streams[_4b.sid]=_4b;
-var _4d=Playdar.Util.extend_object({id:_4b.sid,url:Playdar.client.get_stream_url(_4b.sid),isMovieStar:(_4b.mimetype=="audio/mp4")},_4c);
+var _4d=Playdar.Util.extend_object({id:"s_"+_4b.sid,url:Playdar.client.get_stream_url(_4b.sid),isMovieStar:Playdar.Player.MPEG4_MIMETYPES[_4b.mimetype]==true,bufferTime:2},_4c);
 var _4e=[_4c];
 if(Playdar.status_bar){
 _4e.push(Playdar.status_bar.get_sound_callbacks(_4b));
@@ -417,7 +418,7 @@ return false;
 }
 return _4f;
 },play_stream:function(sid){
-var _50=this.soundmanager.getSoundById(sid);
+var _50=this.soundmanager.getSoundById("s_"+sid);
 if(this.nowplayingid!=sid){
 this.stop_current();
 if(_50.playState==0){
@@ -435,10 +436,10 @@ if(Playdar.scrobbler){
 Playdar.scrobbler.stop();
 }
 }
+console.info("STOP: "+this.nowplayingid);
 if(this.nowplayingid){
-var _52=this.soundmanager.getSoundById(this.nowplayingid);
+var _52=this.soundmanager.getSoundById("s_"+this.nowplayingid);
 _52.stop();
-_52.setPosition(1);
 this.nowplayingid=null;
 }
 if(Playdar.status_bar){

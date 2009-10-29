@@ -641,7 +641,7 @@ Playdar.Player.prototype = {
         this.streams[result.sid] = result;
         
         var sound_options = Playdar.Util.extend_object({
-            id: result.sid,
+            id: 's_' + result.sid,
             url: Playdar.client.get_stream_url(result.sid),
             isMovieStar: Playdar.Player.MPEG4_MIMETYPES[result.mimetype] == true,
             bufferTime: 2
@@ -665,7 +665,7 @@ Playdar.Player.prototype = {
         return sound;
     },
     play_stream: function (sid) {
-        var sound = this.soundmanager.getSoundById(sid);
+        var sound = this.soundmanager.getSoundById('s_' + sid);
         if (this.nowplayingid != sid) {
             this.stop_current();
             if (sound.playState == 0) {
@@ -687,7 +687,7 @@ Playdar.Player.prototype = {
             }
         }
         if (this.nowplayingid) {
-            var sound = this.soundmanager.getSoundById(this.nowplayingid);
+            var sound = this.soundmanager.getSoundById('s_' + this.nowplayingid);
             sound.stop();
             sound.setPosition(1);
             this.nowplayingid = null;

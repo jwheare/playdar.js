@@ -1,3 +1,6 @@
+Includes the SoundManager2 library by Scott Schiller: http://www.schillmania.com/projects/soundmanager2/ (BSD licensed)
+
 TODO
 
-* Add flashblock detection for SM2. Also maybe a general timeout event handler
+* Add documentation to this repository
+* Tests

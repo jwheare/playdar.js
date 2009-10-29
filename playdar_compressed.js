@@ -436,10 +436,10 @@ if(Playdar.scrobbler){
 Playdar.scrobbler.stop();
 }
 }
-console.info("STOP: "+this.nowplayingid);
 if(this.nowplayingid){
 var _52=this.soundmanager.getSoundById("s_"+this.nowplayingid);
 _52.stop();
+_52.setPosition(1);
 this.nowplayingid=null;
 }
 if(Playdar.status_bar){

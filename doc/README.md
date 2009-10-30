@@ -1,33 +1,8 @@
-playdar.js Javascript client library
-====================================
-
 **playdar.js** is a Javascript client library for interacting with the [Playdar HTTP API](http://www.playdar.org/api.html).
 
 Here's how you use it:
 
-    var auth_details = {
-        name: "playdar.js Documentation",
-        website: "http://playdarjs.org"
-    };
-    var listeners = {
-        onStat: function (detected) {
-            if (detected) {
-                alert('Playdar detected');
-            } else {
-                alert('Playdar unavailabled');
-            }
-        },
-        onAuth: function () {
-            alert('Access to Playdar authorised');
-        },
-        onAuthClear: function () {
-            alert('User revoked authorisation');
-        }
-    };
-    
-    Playdar.setup(auth_details);
-    Playdar.client.register_listeners(listeners);
-    Playdar.client.init();
+<script src="http://gist.github.com/222804.js"></script>
 
 This will setup the Playdar library with authorisation credentials for your domain, and register a series of lifecycle event listeners.
 
@@ -48,18 +23,7 @@ Searching an available Playdar service for streamable music is a two step proces
 1. Register a results handler.
 2. Call the `Playdar.client.resolve()` method with artist, track (and optionally album) names.
 
-    var results_handler = function (response, final_answer) {
-        if (final_answer) {
-            if (response.results.length) {
-                alert('Found results: ' + response.results.length);
-            } else {
-                alert('No results');
-            }
-        }
-    };
-
-    Playdar.client.register_results_handler(results_handler);
-    Playdar.client.resolve("Weezer", "Pinkerton", "Getchoo");
+<script src="http://gist.github.com/222805.js"></script>
 
 Results handlers are called with two arguments:
 
@@ -77,85 +41,38 @@ If you have content marked up with the [hAudio microformat](http://microformats.
 
 `autodetect` takes an optional callback function, that will get called for each track, passing an object containing the artist and track name and the matched element. If the function returns a qid, this will be passed on to the resolve call so you can hook results up to a custom handler.
 
-    var track_handler = function (track) {
-        // Track object looks like this
-        // {
-        //    'name': [track_name String],
-        //    'artist':  [artist_name String],
-        //    'element':  [element DOMElement]
-        // }
-        
-        var qid = Playdar.Util.generate_uuid();
-        track.element.className = 'q' + qid;
-        return qid;
-    };
-    
-    Playdar.client.autodetect(track_handler);
+<script src="http://gist.github.com/222806.js"></script>
 
 Query history
 =============
 
 Each query id passed back from `Playdar.client.resolve()` calls is stored in `Playdar.client.resolve_qids` (with the last one in `Playdar.client.last_qid` for convenience). So you can easily refetch results by calling `get_results()` yourself:
 
-    // Refetch the last query
-    Playdar.client.get_results(Playdar.client.last_qid);
-    
-    // Refetch the first query
-    Playdar.client.get_results(Playdar.client.resolve_qids[0]);
+<script src="http://gist.github.com/222808.js"></script>
 
 Streaming
 =========
 
-Once you've got a good result, you can construct a streaming url by calling `Playdar.client.get_stream_url()` on the sid.
+Once you've got a good result, you can construct a URL to stream by calling `Playdar.client.get_stream_url()` on the sid.
 
-    alert("Stream URL: " + Playdar.client.get_stream_url(result.sid));
+<script src="http://gist.github.com/222809.js"></script>
 
 The Playdar library also has a built in wrapper for the [SoundManager 2 audio library](http://www.schillmania.com/projects/soundmanager2/), available through the `Playdar.player` module. Simply include the `soundmanager2.js` file, configure the global `soundManager` object it creates and pass it into the `Playdar.setup_player` function to initialise the `Playdar.player` module.
 
-    soundManager.url = '/path/to/soundmanager2_flash9.swf';
-    soundManager.flashVersion = 9;
-    soundManager.onload = function () {
-        Playdar.setup_player(soundManager);
-        Playdar.client.init();
-    };
+<script src="http://gist.github.com/222810.js"></script>
 
 Since SoundManager works via a flash object that's loaded asynchronously, you need to wait for the soundManager.onload event before calling `Playdar.client.init()`, or else you may end up calling SoundManager functions before it's ready.
 
 You now have a couple of methods available for registering and playing Playdar streams:
 
-    // register_stream passes options onto SM createSound
-    Playdar.player.register_stream(result, {
-        onstop: function () {
-            // Scope of 'this' is a SM Sound object
-            alert('Stopped playing sound: ' + this.sID);
-        }
-    });
-    
-    // Play a specific sound. Calls togglePause on the SM Sound object
-    Playdar.player.play_stream(sid);
-    
-    // togglePause on the current sound
-    Playdar.player.toggle_nowplaying();
-    
-    // Stop the current playing sound
-    Playdar.player.stop_current();
-    
-    // Stops a specific sound if it's now playing
-    Playdar.player.stop_stream(sid);
-    
-    // Whether any sound is playing at the moment
-    Playdar.player.is_now_playing();
+<script src="http://gist.github.com/222811.js"></script>
 
 Scrobbling
 ==========
 
 Scrobbling works out of the box with the built in player. If you've implemented your own player, you can use the `Playdar.Scrobbler` module:
 
-    var scrobbler = new Playdar.Scrobbler();
-    scrobbler.start(artist, track, album, duration, track_number, mbid);
-    scrobbler.pause();
-    scrobbler.resume();
-    scrobbler.stop();
+<script src="http://gist.github.com/222812.js"></script>
 
 Calling these according to the  will keep the Playdar daemon's audioscrobbler plugin up to date with your playback process and automatically handle the scrobbling protocol.
 

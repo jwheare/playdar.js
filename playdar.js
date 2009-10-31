@@ -1248,17 +1248,20 @@ Playdar.Parse = {
         var elements = Playdar.Util.select('.haudio', context);
         for (var i = 0; i < elements.length; i++) {
             var element = elements[i];
-            var item_artist = Playdar.Util.select('.contributor', element);
-            var item_track = Playdar.Util.select('.fn', element);
-            if (item_track[0] && item_artist[0]) {
-                var track = {
-                    'title': item_track[0].title || item_track[0].innerHTML,
-                    'artist': item_artist[0].title || item_artist[0].innerHTML,
-                    'album': '', // TODO
-                    'element': element
-                };
-                tracks.push(track);
+            if (!element.playdarParsed) {
+                var item_artist = Playdar.Util.select('.contributor', element);
+                var item_track = Playdar.Util.select('.fn', element);
+                if (item_track[0] && item_artist[0]) {
+                    var track = {
+                        'title': item_track[0].title || item_track[0].innerHTML,
+                        'artist': item_artist[0].title || item_artist[0].innerHTML,
+                        'album': '', // TODO
+                        'element': element
+                    };
+                    tracks.push(track);
+                }
             }
+            element.playdarParsed = true;
         }
         return tracks;
     },

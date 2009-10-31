@@ -245,27 +245,6 @@ Playdar.Client.prototype = {
         }
     },
     
-    // CONTENT RESOLUTION
-    
-    parse_microformats: function (context) {
-        var tracks = [];
-        var elements = Playdar.Util.select('.haudio', context);
-        for (var i = 0; i < elements.length; i++) {
-            var element = elements[i];
-            var item_artist = Playdar.Util.select('.contributor', element);
-            var item_track = Playdar.Util.select('.fn', element);
-            if (item_track[0] && item_artist[0]) {
-                var track = {
-                    'artist': item_artist[0].title || item_artist[0].innerHTML,
-                    'name': item_track[0].title || item_track[0].innerHTML,
-                    'element': element
-                };
-                tracks.push(track);
-            }
-        }
-        return tracks;
-    },
-    
     /**
      * Playdar.client.autodetect([callback][, context])
      * - callback (Function): Function to be run for each track to be resolved
@@ -280,16 +259,34 @@ Playdar.Client.prototype = {
         if (!this.is_authed()) {
             return false;
         }
-        var track, qid;
-        var tracks = this.parse_microformats(context);
-        for (var i = 0; i < tracks.length; i++) {
+        var qid, i;
+        // Microformats
+        var track;
+        var tracks = Playdar.Parse.microformats(context);
+        for (i = 0; i < tracks.length; i++) {
             track = tracks[i];
             if (callback) {
                 qid = callback(track);
             }
-            Playdar.client.resolve(track.artist, '', track.name, qid);
+            this.resolve(track.artist, track.album, track.title, qid);
+        }
+        // RDFa
+        var list, album_name, j;
+        var lists = Playdar.Parse.rdfa(context);
+        for (i = 0; i < lists.length; i++) {
+            list = lists[i];
+            album_name = (list.type.indexOf('album') == 0) ? list.title : '';
+            for (j = 0; j < list.tracks.length; j++) {
+                track = list.tracks[j];
+                if (callback) {
+                    qid = callback(track);
+                }
+                this.resolve(track.artist, album_name, track.title, qid);
+            }
         }
     },
+    
+    // CONTENT RESOLUTION
     
     resolve: function (artist, album, track, qid, url) {
         if (!this.is_authed()) {
@@ -1241,6 +1238,127 @@ Playdar.Util = {
         }
     },
     null_callback: function () {}
+};
+
+// CONTENT PARSING
+
+Playdar.Parse = {
+    microformats: function (context) {
+        var tracks = [];
+        var elements = Playdar.Util.select('.haudio', context);
+        for (var i = 0; i < elements.length; i++) {
+            var element = elements[i];
+            var item_artist = Playdar.Util.select('.contributor', element);
+            var item_track = Playdar.Util.select('.fn', element);
+            if (item_track[0] && item_artist[0]) {
+                var track = {
+                    'title': item_track[0].title || item_track[0].innerHTML,
+                    'artist': item_artist[0].title || item_artist[0].innerHTML,
+                    'album': '', // TODO
+                    'element': element
+                };
+                tracks.push(track);
+            }
+        }
+        return tracks;
+    },
+    
+    rdfa: function (context) {
+        var sel = Playdar.Util.select;
+        function selExc (selector, exclude, context) {
+            return sel(selector + ':not(' + exclude + ' ' + selector + ')', context);
+        }
+        function selExcRec (selector, context) {
+            return sel(selector + ':not([typeof=audio:Recording] ' + selector + ')', context);
+        }
+        
+        function getProperty (collection, prop) {
+            var prop = prop || 'innerHTML';
+            return collection[0] ? (collection[0][prop] || collection[0].getAttribute(prop)) : undefined;
+        }
+        
+        function getContent (collection) {
+            return getProperty(collection, 'content')
+                || getProperty(collection, 'title')
+                || getProperty(collection);
+        }
+        
+        function getBuyData (context, rec) {
+            var buySel = rec ? sel : selExcRec;
+            var buyURL = getProperty(buySel('[rel=commerce:payment]', context), 'href');
+            if (!buyURL) {
+                return;
+            }
+            return {
+                url: buyURL,
+                currency: getContent(buySel('[rel=commerce:costs] [property=commerce:currency]', context)),
+                amount: getProperty(buySel('[rel=commerce:costs] [property=commerce:amount]', context))
+            };
+        }
+        
+        function getTracks (context, artist) {
+            var tracks = selExcRec('[typeof=audio:Recording]', context);
+            var data = [];
+            var i, track;
+            for (i = 0; i < tracks.length; i++) {
+                if (!tracks[i].playdarParsed) {
+                    track = {
+                        title: getProperty(sel('[property=dcterms:title]', tracks[i])),
+                        artist: getProperty(sel('[property=dcterms:creator]', tracks[i]))
+                             || artist,
+                        position: getProperty(sel('[property=media:position]', tracks[i])),
+                        duration: getContent(sel('[property=media:duration]', tracks[i])),
+                        type: getProperty(sel('[property=dcterms:type]', tracks[i])),
+                        buy: getBuyData(tracks[i], true)
+                    };
+                    data.push(track);
+                    tracks[i].playdarParsed = true;
+                }
+            }
+            return data;
+        }
+        
+        function getAlbums (context) {
+            var albums = sel('[typeof=audio:Album]', context);
+            var data = [];
+            var i, type, album, album_tracks;
+            for (i = 0; i < albums.length; i++) {
+                if (!albums[i].playdarParsed) {
+                    type = getProperty(selExcRec('[property=dcterms:type]', albums[i]));
+                    album = {
+                        type: type ? 'album/' + type : 'album',
+                        title: getProperty(selExcRec('[property=dcterms:title]', albums[i])),
+                        artist: getProperty(selExcRec('[property=dcterms:creator]', albums[i])),
+                        image: getProperty(selExcRec('[rel=media:depiction]', albums[i]), 'src'),
+                        download: getProperty(selExcRec('[rel=media:download]', albums[i]), 'href'),
+                        released: getContent(selExcRec('[property=dcterms:issued]', albums[i])),
+                        duration: getContent(selExcRec('[property=media:duration]', albums[i])),
+                        buy: getBuyData(albums[i])
+                    };
+                    album.tracks = getTracks(albums[i], album.artist);
+                    data.push(album);
+                    albums[i].playdarParsed = true;
+                }
+            }
+            return data;
+        }
+        
+        function getTrackLists (context) {
+            var lists = getAlbums(context);
+            var tracks = getTracks(context);
+            if (tracks.length) {
+                lists.push({
+                    type: 'page',
+                    title: window.title || window.location.href,
+                    tracks: tracks
+                });
+            }
+            return lists;
+        }
+        
+        var lists = getTrackLists(context);
+        return lists;
+    }
 };
 
 Playdar.Util.addEvent(window, 'beforeunload', Playdar.unload);

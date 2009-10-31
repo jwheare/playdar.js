@@ -1275,9 +1275,33 @@ Playdar.Parse = {
             return sel(selector + ':not([typeof=audio:Recording] ' + selector + ')', context);
         }
         
+        function getNS (node, url) {
+            for (var i = 0; i < node.attributes.length; i++) {
+                var attr = node.attributes[i];
+                if (attr.nodeValue == url) {
+                    return attr.nodeName.replace('xmlns:', '');
+                }
+            }
+        }
+        
+        var htmlNode = sel('html')[0];
+        var commerceNS = getNS(htmlNode, 'http://purl.org/commerce#');
+        var audioNS = getNS(htmlNode, 'http://purl.org/media/audio#');
+        var mediaNS = getNS(htmlNode, 'http://purl.org/media#');
+        var dcNS = getNS(htmlNode, 'http://purl.org/dc/terms/');
+        var foafNS = getNS(htmlNode, 'http://xmlns.com/foaf/0.1/');
+        
         function getProperty (collection, prop) {
             var prop = prop || 'innerHTML';
-            return collection[0] ? (collection[0][prop] || collection[0].getAttribute(prop)) : undefined;
+            var coll, property;
+            for (var i = 0; i < collection.length; i++) {
+                coll = collection[i];
+                property = coll[prop] || coll.getAttribute(prop);
+                if (property) {
+                    return property;
+                }
+            }
+            return;
         }
         
         function getContent (collection) {
@@ -1288,30 +1312,51 @@ Playdar.Parse = {
         
         function getBuyData (context, rec) {
             var buySel = rec ? sel : selExcRec;
-            var buyURL = getProperty(buySel('[rel~=commerce:payment]', context), 'href');
+            var buyURL = getProperty(buySel('[rel~='+commerceNS+':payment]', context), 'href');
             if (!buyURL) {
                 return;
             }
             return {
                 url: buyURL,
-                currency: getContent(buySel('[rel~=commerce:costs] [property=commerce:currency]', context)),
-                amount: getProperty(buySel('[rel~=commerce:costs] [property=commerce:amount]', context))
+                currency: getContent(buySel('[rel~='+commerceNS+':costs] [property='+commerceNS+':currency]', context)),
+                amount: getContent(buySel('[rel~='+commerceNS+':costs] [property='+commerceNS+':amount]', context))
             };
         }
         
+        function getPosition (trackNode) {
+            var position = getContent(sel('[property='+mediaNS+':position]', trackNode));
+            if (!position) {
+                // Extract position from ordered list
+                var currentNode = trackNode;
+                var elderSiblings = 0;
+                if (trackNode.nodeName == 'LI' && trackNode.parentNode.nodeName == 'OL') {
+                    // Loop back through siblings and count how many come before
+                    while (currentNode.previousSibling) {
+                        currentNode = currentNode.previousSibling;
+                        if (currentNode.nodeName == 'LI') {
+                            elderSiblings++;
+                        }
+                    }
+                    position = elderSiblings + 1;
+                }
+            }
+            return position;
+        }
+        
         function getTracks (context, artist) {
-            var tracks = selExcRec('[typeof=audio:Recording]', context);
+            var tracks = selExcRec('[typeof='+audioNS+':Recording]', context);
             var data = [];
-            var i, track;
+            var i, type, track;
             for (i = 0; i < tracks.length; i++) {
                 if (!tracks[i].playdarParsed) {
+                    type = getContent(sel('[property='+dcNS+':type]', tracks[i]));
                     track = {
-                        title: getProperty(sel('[property=dcterms:title]', tracks[i])),
-                        artist: getProperty(sel('[property=dcterms:creator]', tracks[i]))
+                        title: getContent(sel('[property='+dcNS+':title]', tracks[i])),
+                        artist: getContent(sel('[property='+dcNS+':creator]', tracks[i]))
                              || artist,
-                        position: getProperty(sel('[property=media:position]', tracks[i])),
-                        duration: getContent(sel('[property=media:duration]', tracks[i])),
-                        type: getProperty(sel('[property=dcterms:type]', tracks[i])),
+                        position: getPosition(tracks[i]),
+                        duration: getContent(sel('[property='+mediaNS+':duration]', tracks[i])),
+                        type: type ? 'track/' + type : 'track',
                         buy: getBuyData(tracks[i], true)
                     };
                     data.push(track);
@@ -1321,21 +1366,39 @@ Playdar.Parse = {
             return data;
         }
         
+        function getArtist (context) {
+            // Check the dc:creator property for foaf:name or innerHTML
+            var artist = selExcRec('[property='+dcNS+':creator]', context);
+            var artistName = getContent(sel('[property='+foafNS+':name]', artist))
+                          || getContent(artist);
+            if (!artistName) {
+                // Follow a link to a resource that describes the artist
+                var artistLink = selExcRec('[rel~='+dcNS+':creator]', context);
+                var artistId = getProperty(artistLink, 'resource');
+                if (artistId) {
+                    var resource = sel('[about='+artistId+']');
+                    artistName = getContent(sel('[property='+foafNS+':name]', resource[0]))
+                              || getContent(resource);
+                }
+            }
+            return artistName;
+        }
+        
         function getAlbums (context) {
-            var albums = sel('[typeof=audio:Album]', context);
+            var albums = sel('[typeof='+audioNS+':Album]', context);
             var data = [];
             var i, type, album, album_tracks;
             for (i = 0; i < albums.length; i++) {
                 if (!albums[i].playdarParsed) {
-                    type = getProperty(selExcRec('[property=dcterms:type]', albums[i]));
+                    type = getContent(selExcRec('[property='+dcNS+':type]', albums[i]));
                     album = {
                         type: type ? 'album/' + type : 'album',
-                        title: getProperty(selExcRec('[property=dcterms:title]', albums[i])),
-                        artist: getProperty(selExcRec('[property=dcterms:creator]', albums[i])),
-                        image: getProperty(selExcRec('[rel~=media:depiction]', albums[i]), 'src'),
-                        download: getProperty(selExcRec('[rel~=media:download]', albums[i]), 'href'),
-                        released: getContent(selExcRec('[property=dcterms:issued]', albums[i])),
-                        duration: getContent(selExcRec('[property=media:duration]', albums[i])),
+                        title: getContent(selExcRec('[property='+dcNS+':title]', albums[i])),
+                        artist: getArtist(albums[i]),
+                        image: getProperty(selExcRec('[rel~='+mediaNS+':depiction]', albums[i]), 'src'),
+                        download: getProperty(selExcRec('[rel~='+mediaNS+':download]', albums[i]), 'href'),
+                        released: getContent(selExcRec('[property='+dcNS+':issued]', albums[i])),
+                        duration: getContent(selExcRec('[property='+mediaNS+':duration]', albums[i])),
                         buy: getBuyData(albums[i])
                     };
                     album.tracks = getTracks(albums[i], album.artist);

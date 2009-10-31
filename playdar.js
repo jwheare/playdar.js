@@ -259,30 +259,23 @@ Playdar.Client.prototype = {
         if (!this.is_authed()) {
             return false;
         }
-        var qid, i;
-        // Microformats
-        var track;
-        var tracks = Playdar.Parse.microformats(context);
-        for (i = 0; i < tracks.length; i++) {
-            track = tracks[i];
-            if (callback) {
-                qid = callback(track);
-            }
-            this.resolve(track.artist, track.album, track.title, qid);
-        }
-        // RDFa
-        var list, album_name, j;
-        var lists = Playdar.Parse.rdfa(context);
-        for (i = 0; i < lists.length; i++) {
-            list = lists[i];
-            album_name = (list.type.indexOf('album') == 0) ? list.title : '';
-            for (j = 0; j < list.tracks.length; j++) {
-                track = list.tracks[j];
-                if (callback) {
-                    qid = callback(track);
+        var qid, i, j, list, j, track;
+        try {
+            var mf = Playdar.Parse.microformats(context);
+            var rdfa = Playdar.Parse.rdfa(context);
+            var data = mf.concat(rdfa);
+            for (i = 0; i < data.length; i++) {
+                list = data[i];
+                for (j = 0; j < list.tracks.length; j++) {
+                    track = list.tracks[j];
+                    if (callback) {
+                        qid = callback(track);
+                    }
+                    this.resolve(track.artist, track.album, track.title, qid);
                 }
-                this.resolve(track.artist, album_name, track.title, qid);
             }
+        } catch (error) {
+            console.warn(error);
         }
     },
     
@@ -1243,27 +1236,156 @@ Playdar.Util = {
 // CONTENT PARSING
 
 Playdar.Parse = {
-    microformats: function (context) {
-        var tracks = [];
-        var elements = Playdar.Util.select('.haudio', context);
-        for (var i = 0; i < elements.length; i++) {
-            var element = elements[i];
-            if (!element.playdarParsed) {
-                var item_artist = Playdar.Util.select('.contributor', element);
-                var item_track = Playdar.Util.select('.fn', element);
-                if (item_track[0] && item_artist[0]) {
-                    var track = {
-                        'title': item_track[0].title || item_track[0].innerHTML,
-                        'artist': item_artist[0].title || item_artist[0].innerHTML,
-                        'album': '', // TODO
-                        'element': element
-                    };
-                    tracks.push(track);
+    getProperty: function (collection, prop) {
+        var prop = prop || 'innerHTML';
+        var i, coll, property;
+        for (i = 0; i < collection.length; i++) {
+            coll = collection[i];
+            property = coll[prop] || coll.getAttribute(prop);
+            if (property) {
+                return property;
+            }
+        }
+        return;
+    },
+    getValue: function (collection) {
+        var i, coll, value;
+        for (i = 0; i < collection.length; i++) {
+            coll = collection[i];
+            value = Playdar.Util.select('.value', coll);
+            if (value.length) {
+                return Playdar.Parse.getContentWithoutValue(value);
+            }
+        }
+        return;
+    },
+    getContentWithoutValue: function (collection) {
+        return Playdar.Parse.getProperty(collection, 'content')
+            || Playdar.Parse.getProperty(collection, 'title')
+            || Playdar.Parse.getProperty(collection);
+    },
+    getContent: function (collection) {
+        var content = Playdar.Parse.getValue(collection)
+                   || Playdar.Parse.getContentWithoutValue(collection);
+        if (content) {
+            return content.replace(/(^\s*)|(\s*$)/g, '');
+        }
+        return;
+    },
+    getPosition: function (trackNode) {
+        // Extract position from ordered list
+        var currentNode = trackNode;
+        var elderSiblings = 0;
+        if (trackNode.nodeName == 'LI' && trackNode.parentNode.nodeName == 'OL') {
+            // Loop back through siblings and count how many come before
+            while (currentNode.previousSibling) {
+                currentNode = currentNode.previousSibling;
+                if (currentNode.nodeName == 'LI') {
+                    elderSiblings++;
                 }
             }
-            element.playdarParsed = true;
+            return elderSiblings + 1;
         }
-        return tracks;
+        return;
+    },
+    
+    microformats: function (context) {
+        var sel = Playdar.Util.select;
+        function selExcRec (selector, context) {
+            return sel(selector + ':not(.item ' + selector + ')', context);
+        }
+        
+        function getBuyData (context, rec) {
+            var buySel = rec ? sel : selExcRec;
+            var buyURL = Playdar.Parse.getProperty(buySel('.payment', context), 'href')
+                      || Playdar.Parse.getProperty(buySel('[rel~=payment]', context), 'href');
+            if (!buyURL) {
+                return;
+            }
+            return {
+                url: buyURL,
+                currency: Playdar.Parse.getContent(buySel('.price .currency', context)),
+                amount: Playdar.Parse.getContent(buySel('.price .amount', context))
+            };
+        }
+        function getTrackData (tracks, artist, album) {
+            var data = [];
+            var i, track;
+            for (i = 0; i < tracks.length; i++) {
+                if (!tracks[i].playdarParsed) {
+                    track = {
+                        title: Playdar.Parse.getContent(sel('.fn', tracks[i]))
+                            || Playdar.Parse.getContent(sel('.title', tracks[i])),
+                        artist: Playdar.Parse.getContent(sel('.contributor', tracks[i]))
+                             || artist,
+                        album: album,
+                        position: Playdar.Parse.getContent(sel('.position', tracks[i]))
+                               || Playdar.Parse.getPosition(tracks[i]),
+                        duration: Playdar.Parse.getContent(sel('.duration', tracks[i])),
+                        buy: getBuyData(tracks[i], true),
+                        element: tracks[i]
+                    };
+                    data.push(track);
+                    tracks[i].playdarParsed = true;
+                }
+            }
+            return data;
+        }
+        
+        function getArtist (context) {
+            // Check the .contributor property for .fn or innerHTML
+            var artist = selExcRec('.contributor', context);
+            var artistName = Playdar.Parse.getContent(sel('.fn', artist[0]));
+            if (!artistName) {
+                artistName = Playdar.Parse.getContent(artist);
+            }
+            return artistName;
+        }
+        
+        function getAlbums (context) {
+            var data = [];
+            var albums = sel('.haudio', context);
+            var i, album_name, album_artist, album, item_artist, item_track, tracks, data;
+            for (i = 0; i < albums.length; i++) {
+                if (!albums[i].playdarParsed) {
+                    album_name = Playdar.Parse.getContent(selExcRec('.album', albums[i]));
+                    if (!album_name) {
+                        continue;
+                    }
+                    album = {
+                        type: 'album',
+                        title: album_name,
+                        artist: getArtist(albums[i]),
+                        image: Playdar.Parse.getProperty(selExcRec('.photo', albums[i]), 'src')
+                            || Playdar.Parse.getProperty(selExcRec('.photo', albums[i]), 'href'),
+                        download: Playdar.Parse.getProperty(selExcRec('[rel~=enclosure]', albums[i]), 'href'),
+                        released: Playdar.Parse.getContent(selExcRec('.published', albums[i])),
+                        duration: Playdar.Parse.getContent(selExcRec('.duration', albums[i])),
+                        buy: getBuyData(albums[i])
+                    };
+                    album.tracks = getTrackData(sel('.item', albums[i]), album.artist, album_name);
+                    data.push(album);
+                    albums[i].playdarParsed = true;
+                }
+            }
+            return data;
+        }
+        
+        function getTrackLists (context) {
+            var lists = getAlbums(context);
+            var tracks = getTrackData(sel('.haudio'));
+            if (tracks.length) {
+                lists.push({
+                    type: 'page',
+                    title: window.title || window.location.href,
+                    tracks: tracks
+                });
+            }
+            return lists;
+        }
+        
+        var lists = getTrackLists(context);
+        return lists;
     },
     
     rdfa: function (context) {
@@ -1272,7 +1394,7 @@ Playdar.Parse = {
             return sel(selector + ':not(' + exclude + ' ' + selector + ')', context);
         }
         function selExcRec (selector, context) {
-            return sel(selector + ':not([typeof=audio:Recording] ' + selector + ')', context);
+            return sel(selector + ':not([typeof='+audioNS+':Recording] ' + selector + ')', context);
         }
         
         function getNS (node, url) {
@@ -1291,73 +1413,36 @@ Playdar.Parse = {
         var dcNS = getNS(htmlNode, 'http://purl.org/dc/terms/');
         var foafNS = getNS(htmlNode, 'http://xmlns.com/foaf/0.1/');
         
-        function getProperty (collection, prop) {
-            var prop = prop || 'innerHTML';
-            var coll, property;
-            for (var i = 0; i < collection.length; i++) {
-                coll = collection[i];
-                property = coll[prop] || coll.getAttribute(prop);
-                if (property) {
-                    return property;
-                }
-            }
-            return;
-        }
-        
-        function getContent (collection) {
-            return getProperty(collection, 'content')
-                || getProperty(collection, 'title')
-                || getProperty(collection);
-        }
-        
         function getBuyData (context, rec) {
             var buySel = rec ? sel : selExcRec;
-            var buyURL = getProperty(buySel('[rel~='+commerceNS+':payment]', context), 'href');
+            var buyURL = Playdar.Parse.getProperty(buySel('[rel~='+commerceNS+':payment]', context), 'href');
             if (!buyURL) {
                 return;
             }
             return {
                 url: buyURL,
-                currency: getContent(buySel('[rel~='+commerceNS+':costs] [property='+commerceNS+':currency]', context)),
-                amount: getContent(buySel('[rel~='+commerceNS+':costs] [property='+commerceNS+':amount]', context))
+                currency: Playdar.Parse.getContent(buySel('[rel~='+commerceNS+':costs] [property='+commerceNS+':currency]', context)),
+                amount: Playdar.Parse.getContent(buySel('[rel~='+commerceNS+':costs] [property='+commerceNS+':amount]', context))
             };
         }
         
-        function getPosition (trackNode) {
-            var position = getContent(sel('[property='+mediaNS+':position]', trackNode));
-            if (!position) {
-                // Extract position from ordered list
-                var currentNode = trackNode;
-                var elderSiblings = 0;
-                if (trackNode.nodeName == 'LI' && trackNode.parentNode.nodeName == 'OL') {
-                    // Loop back through siblings and count how many come before
-                    while (currentNode.previousSibling) {
-                        currentNode = currentNode.previousSibling;
-                        if (currentNode.nodeName == 'LI') {
-                            elderSiblings++;
-                        }
-                    }
-                    position = elderSiblings + 1;
-                }
-            }
-            return position;
-        }
-        
-        function getTracks (context, artist) {
-            var tracks = selExcRec('[typeof='+audioNS+':Recording]', context);
+        function getTracks (context, artist, album) {
             var data = [];
-            var i, type, track;
+            var tracks = selExcRec('[typeof='+audioNS+':Recording]', context);
+            var i, track;
             for (i = 0; i < tracks.length; i++) {
                 if (!tracks[i].playdarParsed) {
-                    type = getContent(sel('[property='+dcNS+':type]', tracks[i]));
                     track = {
-                        title: getContent(sel('[property='+dcNS+':title]', tracks[i])),
-                        artist: getContent(sel('[property='+dcNS+':creator]', tracks[i]))
+                        title: Playdar.Parse.getContent(sel('[property='+dcNS+':title]', tracks[i])),
+                        artist: Playdar.Parse.getContent(sel('[property='+dcNS+':creator]', tracks[i]))
                              || artist,
-                        position: getPosition(tracks[i]),
-                        duration: getContent(sel('[property='+mediaNS+':duration]', tracks[i])),
-                        type: type ? 'track/' + type : 'track',
-                        buy: getBuyData(tracks[i], true)
+                        album: album, // TODO
+                        position: Playdar.Parse.getContent(sel('[property='+mediaNS+':position]', tracks[i]))
+                               || Playdar.Parse.getPosition(tracks[i]),
+                        duration: Playdar.Parse.getContent(sel('[property='+mediaNS+':duration]', tracks[i]))
+                               || Playdar.Parse.getContent(sel('[property='+dcNS+':duration]', tracks[i])),
+                        buy: getBuyData(tracks[i], true),
+                        element: tracks[i]
                     };
                     data.push(track);
                     tracks[i].playdarParsed = true;
@@ -1369,39 +1454,47 @@ Playdar.Parse = {
         function getArtist (context) {
             // Check the dc:creator property for foaf:name or innerHTML
             var artist = selExcRec('[property='+dcNS+':creator]', context);
-            var artistName = getContent(sel('[property='+foafNS+':name]', artist))
-                          || getContent(artist);
+            var artistName;
+            if (artist.length) {
+                artistName = Playdar.Parse.getContent(sel('[property='+foafNS+':name]', artist[0]));
+            }
             if (!artistName) {
                 // Follow a link to a resource that describes the artist
-                var artistLink = selExcRec('[rel~='+dcNS+':creator]', context);
-                var artistId = getProperty(artistLink, 'resource');
+                var artistLink = sel('[rel~='+dcNS+':creator]', context);
+                var artistId = Playdar.Parse.getProperty(artistLink, 'resource');
                 if (artistId) {
                     var resource = sel('[about='+artistId+']');
-                    artistName = getContent(sel('[property='+foafNS+':name]', resource[0]))
-                              || getContent(resource);
+                    artistName = Playdar.Parse.getContent(sel('[property='+foafNS+':name]', resource[0]))
+                              || Playdar.Parse.getContent(resource);
                 }
+            }
+            if (!artistName) {
+                artistName = Playdar.Parse.getContent(artist);
             }
             return artistName;
         }
         
         function getAlbums (context) {
-            var albums = sel('[typeof='+audioNS+':Album]', context);
             var data = [];
-            var i, type, album, album_tracks;
+            var albums = sel('[typeof='+audioNS+':Album]', context);
+            var i, album, album_tracks;
             for (i = 0; i < albums.length; i++) {
                 if (!albums[i].playdarParsed) {
-                    type = getContent(selExcRec('[property='+dcNS+':type]', albums[i]));
                     album = {
-                        type: type ? 'album/' + type : 'album',
-                        title: getContent(selExcRec('[property='+dcNS+':title]', albums[i])),
+                        type: 'album',
+                        title: Playdar.Parse.getContent(selExcRec('[property='+dcNS+':title]', albums[i])),
                         artist: getArtist(albums[i]),
-                        image: getProperty(selExcRec('[rel~='+mediaNS+':depiction]', albums[i]), 'src'),
-                        download: getProperty(selExcRec('[rel~='+mediaNS+':download]', albums[i]), 'href'),
-                        released: getContent(selExcRec('[property='+dcNS+':issued]', albums[i])),
-                        duration: getContent(selExcRec('[property='+mediaNS+':duration]', albums[i])),
+                        image: Playdar.Parse.getProperty(selExcRec('[rel~='+mediaNS+':depiction]', albums[i]), 'src')
+                            || Playdar.Parse.getProperty(selExcRec('[rev~='+mediaNS+':depiction]', albums[i]), 'src'),
+                        download: Playdar.Parse.getProperty(selExcRec('[rel~='+mediaNS+':download]', albums[i]), 'href'),
+                        released: Playdar.Parse.getContent(selExcRec('[property='+dcNS+':issued]', albums[i]))
+                               || Playdar.Parse.getContent(selExcRec('[property='+dcNS+':published]', albums[i]))
+                               || Playdar.Parse.getContent(selExcRec('[property='+dcNS+':date]', albums[i])),
+                        duration: Playdar.Parse.getContent(selExcRec('[property='+mediaNS+':duration]', albums[i]))
+                               || Playdar.Parse.getContent(selExcRec('[property='+dcNS+':duration]', albums[i])),
                         buy: getBuyData(albums[i])
                     };
-                    album.tracks = getTracks(albums[i], album.artist);
+                    album.tracks = getTracks(albums[i], album.artist, album.title);
                     data.push(album);
                     albums[i].playdarParsed = true;
                 }

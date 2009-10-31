@@ -1288,14 +1288,14 @@ Playdar.Parse = {
         
         function getBuyData (context, rec) {
             var buySel = rec ? sel : selExcRec;
-            var buyURL = getProperty(buySel('[rel=commerce:payment]', context), 'href');
+            var buyURL = getProperty(buySel('[rel~=commerce:payment]', context), 'href');
             if (!buyURL) {
                 return;
             }
             return {
                 url: buyURL,
-                currency: getContent(buySel('[rel=commerce:costs] [property=commerce:currency]', context)),
-                amount: getProperty(buySel('[rel=commerce:costs] [property=commerce:amount]', context))
+                currency: getContent(buySel('[rel~=commerce:costs] [property=commerce:currency]', context)),
+                amount: getProperty(buySel('[rel~=commerce:costs] [property=commerce:amount]', context))
             };
         }
         
@@ -1332,8 +1332,8 @@ Playdar.Parse = {
                         type: type ? 'album/' + type : 'album',
                         title: getProperty(selExcRec('[property=dcterms:title]', albums[i])),
                         artist: getProperty(selExcRec('[property=dcterms:creator]', albums[i])),
-                        image: getProperty(selExcRec('[rel=media:depiction]', albums[i]), 'src'),
-                        download: getProperty(selExcRec('[rel=media:download]', albums[i]), 'href'),
+                        image: getProperty(selExcRec('[rel~=media:depiction]', albums[i]), 'src'),
+                        download: getProperty(selExcRec('[rel~=media:download]', albums[i]), 'href'),
                         released: getContent(selExcRec('[property=dcterms:issued]', albums[i])),
                         duration: getContent(selExcRec('[property=media:duration]', albums[i])),
                         buy: getBuyData(albums[i])

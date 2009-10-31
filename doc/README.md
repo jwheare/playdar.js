@@ -35,7 +35,7 @@ The `client.init()` method checks for a running Playdar service. The `onStat` ev
 Advanced authorisation
 ======================
 
-If you'd like to streamline the auth process, you can include a `receiverurl` in the `auth_details` object. This should be a URL that points to a [playdarauth.html](/playdarauth.html) file hosted on your domain that receives messages through the location hash and passes it back to a `window.opener`. An auth token will be sent to this URL after user authorisation so that Playdar can set an auth cookie on your domain.
+If you'd like to streamline the auth process, you can include a `receiverurl` in the `auth_details` object. This should be a URL that points to a [playdarauth.html](http://www.playdarjs.org/playdarauth.html) file hosted on your domain that receives messages through the location hash and passes it back to a `window.opener`. An auth token will be sent to this URL after user authorisation so that Playdar can set an auth cookie on your domain.
 
 Resolving content
 =================

@@ -206,7 +206,7 @@ Playdar.Client.prototype = {
     },
     get_disconnect_link_html: function (text) {
         text = text || "Disconnect";
-        var html = '<a href="' + this.get_base_url('/settings/auth/')
+        var html = '<a href="' + this.get_revoke_url()
             + '" onclick="Playdar.client.clear_auth(); return false;'
         + '">' + text + '</a>';
         return html;

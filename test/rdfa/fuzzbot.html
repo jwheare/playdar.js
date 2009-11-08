@@ -1,0 +1,168 @@
+<html version="XHTML+RDFa 1.0" 
+      xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:xsd="http://www.w3.org/2001/XMLSchema#"
+      xmlns:dcterms="http://purl.org/dc/terms/"
+      xmlns:media="http://purl.org/media#"
+      xmlns:audio="http://purl.org/media/audio#"
+      xmlns:commerce="http://purl.org/commerce#"
+      xmlns:vcard="http://www.w3.org/2001/vcard-rdf/3.0#">
+<head>
+   <title>Audio Vocabulary Demo</title>
+</head>
+<body>
+
+<div about="#start-wearing-purple" typeof="audio:Recording">
+   <a rel="media:depiction" href="http://userserve-ak.last.fm/serve/130x130/3552557.jpg">
+      <span about="#start-wearing-purple" property="dcterms:title">Start Wearing Purple</span>
+   </a> by 
+   <span property="dcterms:creator">Gogol Bordello</span>
+
+</div>
+
+<div about="#i-have-a-dream" typeof="audio:Recording">
+   <span property="dcterms:title">I Have a Dream</span>, a 	 
+   <span property="dcterms:type">speech</span> by 	 
+   <span property="dcterms:creator">Martin Luther King, Jr.</span>
+</div>
+
+<div about="#sneaking-sally" typeof="audio:Album">
+   <img rel="media:depiction" src="images/sneaking_sally.jpg"/>
+   <span property="dcterms:title">Sneaking Sally Thru The Alley</span> by
+   <span property="dcterms:creator">Phish</span>
+
+   <br/>
+    Label: <span property="dcterms:contributor">Island</span>
+   </span>
+   <br/>
+   Released on:
+   <span property="dcterms:published" datatype="xsd:date" content="2006-10-31">October 31, 2006</span>
+   <br/>
+   Acquire: 
+   <a rel="media:sample" href="/samples/sneaking_sally.mp3">Sample</a>, 
+   <a rel="media:download" href="/live/sneaking_sally.mp3">Live Recording</a>,
+   <a rel="commerce:payment" href="/buy/sneaking_sally">Buy High Quality Track</a>
+
+   Category: <span property="dcterms:type">live</span>
+   Duration: <span property="media:duration" datatype="xsd:duration" content="447S">7 minutes, 27 seconds</span>
+   Price: <div rel="commerce:costs">
+             <div about="#sneaking-sally-price" typeof="commerce:Price">
+                <span property="commerce:currency" content="USD">$</span>
+                <span property="commerce:amount" content="0.99" 
+                      datatype="xsd:decimal">0.99</span>
+
+             </div>
+          </div>
+</div>
+
+<div about="live-phish-vol-15" typeof="audio:Album">
+   <img rel="media:depiction" src="images/live_phish_vol_15.jpg" />
+   <span property="dcterms:title">Live Phish, Volume 15</span>
+   <span property="dcterms:creator">Phish</span>
+   <br/>
+
+   Released on:
+   <span property="dcterms:published" content="2002-10-31">October 31, 2002</span>
+   <br/>
+   Acquire: 
+   <a rel="media:sample" href="/samples/live_phish_vol_15_sample.mp3">Sample</a>, 
+   <a rel="media:download" href="/live/phish_live_phish_vol_15.mp3">Live Recording</a>,
+   <a rel="commerce:payment" href="/buy/phish_live_phish_vol_15">Buy High Quality Track</a>
+   Category: <span property="dcterms:type">live</span>
+
+   Duration: <span property="media:duration" content="PT145M27S">145 minutes, 27 seconds</span>
+   Price: <div rel="commerce:costs">
+             <span property="commerce:currency" content="USD">$</span>
+             <span property="commerce:amount" datatype="xsd:decimal">14.99</span>
+          </div>
+   Tracks:
+   <div rel="media:contains">
+
+      <div about="#sanity" typeof="audio:Recording">
+         <span property="media:position">1</span>.
+         <span property="dcterms:title">Sanity</span>
+         (<span property="media:duration" content="PT5M48S" 
+                datatype="xsd:duration">5:48</span>)
+      </div>
+      <div about="#highway-to-hell">
+         <span property="media:position">2</span>.
+         <span property="dcterms:title">Highway To Hell</span> 
+         (<span property="media:duration" content="PT3M39S"
+                datatype="xsd:duration">3:39</span>)
+      </div>
+
+   </div>
+</div>
+
+<div about="#digital-planet-podcast-oct" typeof="audio:Recording">
+<p>
+   <span property="dcterms:title">DigitalPlanet Podcast</span>
+   :
+   <abbr property="dcterms:published" title="2007-10-29">29 Oct 07</abbr>
+</p>
+<p>
+   <div rel="media:contains">
+
+      <div about="#forensic-computing" typeof="audio:Recording">
+         <span property="dcterms:title">Forensic computing: is it really possible to delete data from your machine?</span>
+      </div>
+      <div about="#broadband-in-africa" typeof="audio:Recording">
+         <span property="dcterms:title">Grand plans for getting broadband into Africa</span>
+      </div>
+      , 
+      <div about="#night-sky-via-internet" typeof="audio:Recording">
+
+         <span property="dcterms:title">checking out the sky at night via the internet</span>
+      </div> 
+      and 
+      <div about="#answering-emails" typeof="audio:Recording">
+         <span property="dcterms:title">answering your emails</span>
+      </div>
+   </div>
+   to the programme.
+</p>
+
+<p>
+   <a rel="media:download" href="/download/episode/DigitalPlanet-2007-10-29">Download MP3</a>
+</p>
+</div>
+
+<div about="#la-boheme" typeof="audio:Recording" lang="en">
+   <span property="dcterms:title" lang="fr">La Bohème</span> 
+   is an 
+   <span property="dcterms:type">opera</span> 
+   in four acts by 
+   <span property="dcterms:creator" lang="it">Giacomo Puccini</span>
+
+   to an 
+   <span property="dcterms:type">Italian liberetto</span>
+   by
+   <span property="dcterms:contributor" lang="it">Luigi Illica</span>
+   and
+   <span property="dcterms:contributor" lang="it">Giuseppe Giacosais</span>.
+   I saw it performed last week and found
+   <div rel="media:contains">
+      <div about="#act-3">
+         <span property="dcterms:title">Act III</span>
+
+         to be pretty interesting, especially the
+         <div rel="media:contains">
+            '<span about="#sa-dirmi-scusi" property="dcterms:title" 
+                  lang="it">Sa dirmi, scusi</span>'
+         </div>
+         and
+         <div rel="media:contains">
+            '<span about="#o-buon-marcello-aiuto" property="dcterms:title" 
+                   lang="it">O buon Marcello, aiuto!</span>'
+         </div>
+      </div>
+
+      arias.
+   </div>
+</div>
+
+<script src="/playdar.js"></script>
+<script src="/soundmanager2.js"></script>
+<script src="rdfa.js"></script>
+
+</body>
+</html>

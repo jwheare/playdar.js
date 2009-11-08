@@ -1,0 +1,169 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML+RDFa 1.0//EN" "http://www.w3.org/MarkUp/DTD/xhtml-rdfa-1.dtd">
+<html version="XHTML+RDFa 1.0"
+      xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:dc="http://purl.org/dc/terms/"
+      xmlns:foaf="http://xmlns.com/foaf/0.1/"
+      xmlns:m="http://purl.org/media#"
+      xmlns:a="http://purl.org/media/audio#"
+      xmlns:comm="http://purl.org/commerce#"
+      xmlns:owl="http://www.w3.org/2002/07/owl#"
+      xmlns:tag="http://www.holygoat.co.uk/owl/redwood/0.1/tags/"
+      xmlns:xsd="http://www.w3.org/2001/XMLSchema#"
+      xml:lang="en">
+
+	<head profile="http://www.w3.org/1999/xhtml/vocab">
+		<title>Buzzword.org.uk Note: RDFa (Audio RDF) Demonstration (Allison Crowe &#8212; Lisa&#8217;s Song + 6 Songs)</title>
+		<link rel="stylesheet" href="http://buzzword.org.uk/Styles/spec-note" type="text/css" media="screen,projection" />
+		<style type="text/css">
+		span[property="m:duration"]     { color: silver; border: 0; }
+		</style>		
+	</head>
+
+	<body>
+
+		<div class="head">
+			<p><a href="http://rdfa.info" style="background:transparent"><img src="http://www.w3.org/RDF/icons/rdf_flyer.64" alt="RDFa" style="border:0" /></a></p>
+			<h1>RDFa (Audio RDF) Demonstration</h1>
+			<dl>
+				<dt>This version:</dt>
+				<dd><a href="http://buzzword.org.uk/2008/audio/rdfa-20080726">http://buzzword.org.uk/2008/audio/rdfa-20080726</a></dd>
+				<dt>Latest version:</dt>
+				<dd><a href="http://buzzword.org.uk/2008/audio/rdfa">http://buzzword.org.uk/2008/audio/rdfa</a></dd>
+				<dt>Alternative format:</dt>
+				<dd><a rel="alternate" href="http://buzzword.org.uk/2008/audio/uf-20080726">http://buzzword.org.uk/2008/audio/uf-20080726</a> (Microformats)</dd>
+				<dt>Editor:</dt>
+				<dd rel="author foaf:maker dc:creator" rev="made foaf:made">
+					<address about="#toby" typeof="foaf:Person" style="font-style:normal">
+						<a property="foaf:name" rel="foaf:page" href="http://tobyinkster.co.uk">Toby Inkster</a>
+						<a rel="owl:sameAs" rev="owl:sameAs" href="http://tobyinkster.co.uk/~tobyink/#" style="display:none"></a>
+					</address>
+				</dd>
+			</dl>
+			<h2>Abstract</h2>
+			<p>This is intended to be a demonstration of the <a href="http://purl.org/media/audio">Audio RDF Vocabulary</a> and <a href="http://rdfa.info">RDFa</a>, but is also a description of a <span rel="foaf:primaryTopic" resource="#album">real musical work</span>. (The album is available under a <a href="http://creativecommons.org/licenses/by-nc-nd/3.0/" rel="license" about="#album">Creative Commons licence</a>. For bandwidth saving purposes, you will be blocked from downloading most of the songs from this server, but you can download the full album via bittorrent using the link included below.) Its <a href="uf">counterpart</a> is a description of the same using <a href="http://microformats.org/wiki/haudio">the hAudio microformat</a>.</p>
+			<hr />
+		</div>
+
+		<div about="#album" typeof="a:Album">
+			<h2 property="dc:title">Lisa&#8217;s Song + 6 Songs</h2>
+			<div typeof="foaf:Person" about="#allison" style="border:1px dashed;background:#eee;padding:0.67em;float:right;width:220px;margin:0 0 0.67em 1em;">
+				<h3 property="foaf:name" style="background:transparent;margin-top:0">Allison Crowe</h3>
+				<div style="text-align:center"><a rel="foaf:img" href="Allison_Crowe.jpeg"><img src="Allison_Crowe_small.jpeg" style="border:1px solid" alt="Photograph" /></a></div>
+				<p style="font-size:85%"><span property="dc:abstract">Allison Louise Crowe (born November 16, 1981) is a Canadian singer, songwriter, guitarist and pianist from Nanaimo, British Columbia.</span> <a rel="foaf:page" href="http://www.allisoncrowe.com/">Official website</a>.</p>
+				<span rev="dc:creator foaf:maker author" rel="foaf:made made" resource="#album"></span>
+			</div>
+			<div typeof="foaf:Group" about="#band" style="border:1px dashed;background:#eee;padding:0.67em;float:right;width:220px;margin:0 0 0.67em 1em;clear:right">
+				<h3 style="background:transparent;margin-top:0">The Band</h3>
+				<p><span property="foaf:name">Allison Crowe's band</span> consists of:</p>
+				<ul rel="foaf:member">
+					<li about="#dave" typeof="foaf:Person"><span property="foaf:name">Dave Baird</span> (<span property="dc:abstract" content="Plays bass on the album.">bass</span>)</li>
+					<li about="#kevin" typeof="foaf:Person"><span property="foaf:name">Kevin Clevette</span> (<span property="dc:abstract" content="Plays drums on the album.">drums</span>)</li>
+				</ul>
+				<span rev="dc:contributor" resource="#album"></span>
+			</div>
+			<img src="Allison_Crowe_-_Lisas_Song_plus_6_Songs_small.jpeg" rel="m:depiction" alt="The cover shows lyrics swirling around a stylised sun." />
+			<p rel="tag:taggedWithTag dc:type">
+				<strong>Categories:</strong>
+				<span typeof="tag:Tag"><span property="tag:tagName">acoustic</span></span>, 
+				<span typeof="tag:Tag"><span property="tag:tagName">rock</span></span>, 
+				<span typeof="tag:Tag"><span property="tag:tagName">folk</span></span>, 
+				<span typeof="tag:Tag"><span property="tag:tagName">indie</span></span>, 
+				<span typeof="tag:Tag"><span property="tag:tagName">jazz</span></span>, 
+				<span typeof="tag:Tag"><span property="tag:tagName">piano</span></span>.
+			</p>
+			<p>
+				<strong>Released:</strong>
+				<span property="dc:published" datatype="xsd:date" content="2003-11-05">5 November 2003</span>
+				by <span property="dc:publisher">Rubenesque Records Ltd</span>.
+			</p>
+			<p>
+				<strong>Payment:</strong>
+				<a href="http://www.jamendo.com/en/artist/allison.crowe/donate" rel="comm:payment">Donate money to Allison Crowe</a>.
+			</p>
+			<p>
+				<strong>Download:</strong>
+				<a type="application/x-bittorrent" href="Allison_Crowe_-_Lisas_Song_plus_6_Songs.torrent" rel="m:download">via Bittorrent</a>.
+			</p>
+			<h3>Description</h3>
+			<div property="dc:description">
+				<p>The first song in this EP collection was recorded live-off-the-floor, in April 2003, by Rick Erickson of Seacoast Sound in Victoria, British Columbia, Canada. The six songs that follow "Lisa's Song" were recorded live-off-the-floor one afternoon on analog tape by Engineer and Producer Larry Anschell, at his Turtle Studios in White Rock, B.C. Allison Crowe and bandmates, Dave Baird (bass), Kevin Clevette (drums), stopped into Turtle while on their way to perform in Seattle, Washington, USA for "Jammers" - fans of Pearl Jam converging from all across America and the world. The essential truth of the trio's July 2001 session is captured in these live, raw, grooves.</p>
+
+				<p>Please visit Lisa's Page @ <a href="http://www.allisoncrowe.com/lisaspage.html">http://www.allisoncrowe.com/lisaspage.html</a> to learn about Lisa Marie Young, the inspiration for the title song.</p>
+			</div>
+			<h3>Track Listing</h3>
+			<ol rel="m:contains dc:hasPart" rev="dc:isPartOf">
+				<li typeof="a:Recording">
+					<a type="application/ogg" href="Allison_Crowe_-_Lisas_Song_plus_6_Songs_-_01_-_Lisas_Song.ogg" property="dc:title" rel="m:download">Lisa&#8217;s Song</a>
+					<small>
+						(<span rel="dc:creator" resource="#allison">Allison</span>)
+					</small>
+					<span property="m:duration" datatype="xsd:duration" content="PT4M20S">[4:20]</span>
+				</li>
+				<li typeof="a:Recording">
+					<a type="application/ogg" href="Allison_Crowe_-_Lisas_Song_plus_6_Songs_-_02_-_Fade_Away.ogg" property="dc:title" rel="m:download">Fade Away</a>
+					<small>
+						(<span rel="dc:creator" resource="#allison">Allison</span>,
+						<span rel="dc:contributor" resource="#band">band</span>)
+					</small>
+					<span property="m:duration" datatype="xsd:duration" content="PT4M14S">[4:14]</span>
+				</li>
+				<li typeof="a:Recording">
+					<a type="application/ogg" href="Allison_Crowe_-_Lisas_Song_plus_6_Songs_-_03_-_Midnight.ogg" property="dc:title" rel="m:download">Midnight</a>
+					<small>
+						(<span rel="dc:creator" resource="#allison">Allison</span>,
+						<span rel="dc:contributor" resource="#band">band</span>)
+					</small>
+					<span property="m:duration" datatype="xsd:duration" content="PT3M19S">[3:19]</span>
+				</li>
+				<li typeof="a:Recording">
+					<a type="application/ogg" href="Allison_Crowe_-_Lisas_Song_plus_6_Songs_-_04_-_Crayon_and_Ink.ogg" property="dc:title" rel="m:download">Crayon and Ink</a>
+					<small>
+						(<span rel="dc:creator" resource="#allison">Allison</span>,
+						<span rel="dc:contributor" resource="#band">band</span>)
+					</small>
+					<span property="m:duration" datatype="xsd:duration" content="PT4M42S">[4:42]</span>
+				</li>
+				<li typeof="a:Recording">
+					<a type="application/ogg" href="Allison_Crowe_-_Lisas_Song_plus_6_Songs_-_05_-_Dark_Blue.ogg" property="dc:title" rel="m:download">Dark Blue</a>
+					<small>
+						(<span rel="dc:creator" resource="#allison">Allison</span>,
+						<span rel="dc:contributor" resource="#band">band</span>)
+					</small>
+					<span property="m:duration" datatype="xsd:duration" content="PT3M54S">[3:54]</span>
+				</li>
+				<li typeof="a:Recording">
+					<a type="application/ogg" href="Allison_Crowe_-_Lisas_Song_plus_6_Songs_-_06_-_Scared.ogg" property="dc:title" rel="m:download">Scared</a>
+					<small>
+						(<span rel="dc:creator" resource="#allison">Allison</span>,
+						<span rel="dc:contributor" resource="#band">band</span>)
+					</small>
+					<span property="m:duration" datatype="xsd:duration" content="PT4M33S">[4:33]</span>
+				</li>
+				<li typeof="a:Recording">
+					<a type="application/ogg" href="Allison_Crowe_-_Lisas_Song_plus_6_Songs_-_07_-_Philosophy.ogg" property="dc:title" rel="m:download">Philosophy</a>
+					<small>
+						(<span rel="dc:creator" resource="#allison">Allison</span>,
+						<span rel="dc:contributor" resource="#band">band</span>)
+					</small>
+					<span property="m:duration" datatype="xsd:duration" content="PT4M07S">[4:07]</span>
+				</li>
+			</ol>
+		</div>
+
+		<div class="foot">
+			<hr />
+			<table>
+				<tr>
+					<td rel="dc:conformsTo" resource="http://www.w3.org/TR/rdfa-syntax"><a  style="background:transparent" href="http://validator.w3.org/check?uri=referer"><img src="http://www.w3.org/Icons/valid-xhtml-rdfa-blue" alt="Valid XHTML + RDFa" style="border-width:0" /></a></td>
+					<td><a rel="license" style="background:transparent" href="http://creativecommons.org/licenses/by-sa/2.0/uk/"><img alt="Creative Commons Licence" style="border-width:0;margin-left:1em" src="http://i.creativecommons.org/l/by-sa/2.0/uk/88x31.png"/></a></td>
+				</tr>
+			</table>
+		</div>
+
+<script src="/playdar.js"></script>
+<script src="/soundmanager2.js"></script>
+<script src="rdfa.js"></script>
+
+	</body>
+
+</html>

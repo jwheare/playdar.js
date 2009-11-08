@@ -293,6 +293,10 @@ Playdar.Client.prototype = {
             url: url || '',
             qid: qid || Playdar.Util.generate_uuid()
         };
+        // List player's supported mimetypes
+        if (Playdar.player) {
+            query.mimetypes = Playdar.player.get_mime_types().join(',');
+        }
         // Update resolving progress status
         if (Playdar.status_bar) {
             Playdar.status_bar.increment_requests();
@@ -616,14 +620,31 @@ Playdar.Player = function (soundmanager) {
     this.soundmanager = soundmanager;
 };
 
-Playdar.Player.MPEG4_MIMETYPES = {
-    "audio/mp4": true,
+// Those set to true are MPEG4 and require isMovieStar in soundmanager init
+Playdar.Player.MIMETYPES = {
+    "audio/mpeg": false,
     "audio/aac": true,
     "audio/x-aac": true,
+    "audio/flv": true,
+    "audio/mov": true,
+    "audio/mp4": true,
+    "audio/m4v": true,
+    "audio/f4v": true,
+    "audio/m4a": true,
     "audio/x-m4a": true,
-    "audio/x-m4b": true
+    "audio/x-m4b": true,
+    "audio/mp4v": true,
+    "audio/3gp": true,
+    "audio/3g2": true
 };
 Playdar.Player.prototype = {
+    get_mime_types: function () {
+        var mime_types = [];
+        for (type in Playdar.Player.MIMETYPES) {
+            mime_types.push(type);
+        }
+        return mime_types;
+    },
     register_stream: function (result, options) {
         if (this.streams[result.sid]) {
             return false;
@@ -634,7 +655,7 @@ Playdar.Player.prototype = {
         var sound_options = Playdar.Util.extend_object({
             id: 's_' + result.sid,
             url: Playdar.client.get_stream_url(result.sid),
-            isMovieStar: Playdar.Player.MPEG4_MIMETYPES[result.mimetype] == true,
+            isMovieStar: Playdar.Player.MIMETYPES[result.mimetype] === true,
             bufferTime: 2
         }, options);
         

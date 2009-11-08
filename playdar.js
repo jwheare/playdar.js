@@ -274,6 +274,7 @@ Playdar.Client.prototype = {
                     this.resolve(track.artist, track.album, track.title, qid);
                 }
             }
+            return data;
         } catch (error) {
             console.warn(error);
         }

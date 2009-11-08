@@ -895,11 +895,13 @@ Playdar.StatusBar.prototype = {
     start_manual_auth: function () {
         this.playdar_links.style.display = "none";
         var input_id = "manualAuth_" + Playdar.client.uuid;
-        var message = '<input type="text" id="' + input_id + '" />'
+        var form = '<form>'
+            + '<input type="text" id="' + input_id + '" />'
             + ' <input type="submit" value="Allow access to Playdar"'
                 + ' onclick="Playdar.client.manual_auth_callback(\'' + input_id + '\'); return false;'
-            + '" />';
-        this.status.innerHTML = message;
+            + '" />'
+            + '</form>';
+        this.status.innerHTML = form;
     },
     
     handle_stat: function (response) {

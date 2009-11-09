@@ -10,10 +10,11 @@ Playdar.client.register_listeners({
     },
     onAuth: function () {
         var results = Playdar.client.autodetect();
-        console.log(JSON.stringify(results));
-        console.dir(results);
-        if (EXPECTED) {
-            console.dir(runTests(results));
+        // console.log(JSON.stringify(results));
+        // console.dir(results);
+        if (fireunit && EXPECTED) {
+            var remainder = runTests(results);
+            // console.dir(remainder);
         }
     }
 });

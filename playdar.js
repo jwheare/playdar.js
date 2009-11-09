@@ -1249,6 +1249,20 @@ Playdar.Util = {
         return final_options;
     },
     
+    location_from_url: function (url) {
+        // Create a dummy link to split out the url parts
+        var dummy = document.createElement('a');
+        dummy.href = url;
+        var location = {};
+        // Use the window.location to extract the location keys
+        for (k in window.location) {
+            if ((typeof(window.location[k]) === 'string')) {
+                location[k] = dummy[k];
+            }
+        }
+        return location;
+    },
+    
     log: function (response) {
         if (typeof console != 'undefined') {
             console.dir(response);

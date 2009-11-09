@@ -160,9 +160,52 @@
    </div>
 </div>
 
+
+<script>
+var EXPECTED = [{
+    "type": "album",
+    "title": "Live Phish, Volume 15",
+    "artist": "Phish",
+    "tracks": [{
+        "title": "Sanity",
+        "artist": "Phish",
+        "album": "Live Phish, Volume 15",
+        "position": "1",
+        "duration": "PT5M48S"
+    }],
+    "image": "http://playdarjs/test/rdfa/images/live_phish_vol_15.jpg",
+    "download": "http://playdarjs/live/phish_live_phish_vol_15.mp3",
+    "released": "2002-10-31",
+    "duration": "PT145M27S",
+    "buy": {
+        "url": "http://playdarjs/buy/phish_live_phish_vol_15",
+        "currency": "USD",
+        "amount": "14.99"
+    }
+},
+{
+    "type": "page",
+    "title": "http://playdarjs/test/rdfa/fuzzbot.html",
+    "tracks": [{
+        "title": "Start Wearing Purple",
+        "artist": "Gogol Bordello"
+    },
+    {
+        "title": "I Have a Dream",
+        "artist": "Martin Luther King, Jr."
+    },
+    {
+        "title": "DigitalPlanet Podcast"
+    },
+    {
+        "title": "La Bohème",
+        "artist": "Giacomo Puccini"
+    }]
+}];
+</script>
 <script src="/playdar.js"></script>
 <script src="/soundmanager2.js"></script>
-<script src="rdfa.js"></script>
+<script src="run.js"></script>
 
 </body>
 </html>

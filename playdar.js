@@ -1312,11 +1312,30 @@ Playdar.Parse = {
         }
         return;
     },
+    getNS: function (node, url) {
+        for (var i = 0; i < node.attributes.length; i++) {
+            var attr = node.attributes[i];
+            if (attr.nodeValue == url) {
+                return attr.nodeName.replace('xmlns:', '');
+            }
+        }
+    },
+    /**
+     * Playdar.Parse.getExc(exclude, selector)
+     * - exclude (String): CSS selector to exclude results from
+     * - selector (String): CSS selector we're looking for
+     * 
+     * Get a pseudo-selector part that excludes from a selector any results
+     * contained within the exclude selector
+    **/
+    getExc: function (exclude, selector) {
+        return ':not(' + exclude + ' ' + selector + ')';
+    },
     
     microformats: function (context) {
         var sel = Playdar.Util.select;
         function selExcRec (selector, context) {
-            return sel(selector + ':not(.item ' + selector + ')', context);
+            return sel(selector + Playdar.Parse.getExc('.item', selector), context);
         }
         
         function getBuyData (context, rec) {
@@ -1369,27 +1388,34 @@ Playdar.Parse = {
         function getAlbums (context) {
             var data = [];
             var albums = sel('.haudio', context);
-            var i, album_name, album_artist, album, item_artist, item_track, tracks, data;
+            var i, album_name, album_artist, album_tracks, album, item_artist, item_track, tracks, data;
             for (i = 0; i < albums.length; i++) {
                 if (!albums[i].playdarParsed) {
+                    albums[i].playdarParsed = true;
                     album_name = Playdar.Parse.getContent(selExcRec('.album', albums[i]));
                     if (!album_name) {
                         continue;
                     }
-                    album = {
+                    album_artist = getArtist(albums[i]);
+                    if (!album_artist) {
+                        continue;
+                    }
+                    album_tracks = getTrackData(sel('.item', albums[i]), album_artist, album_name);
+                    if (!album_tracks.length) {
+                        continue;
+                    }
+                    data.push({
                         type: 'album',
                         title: album_name,
-                        artist: getArtist(albums[i]),
+                        artist: album_artist,
+                        tracks: album_tracks,
                         image: Playdar.Parse.getProperty(selExcRec('.photo', albums[i]), 'src')
                             || Playdar.Parse.getProperty(selExcRec('.photo', albums[i]), 'href'),
                         download: Playdar.Parse.getProperty(selExcRec('[rel~=enclosure]', albums[i]), 'href'),
                         released: Playdar.Parse.getContent(selExcRec('.published', albums[i])),
                         duration: Playdar.Parse.getContent(selExcRec('.duration', albums[i])),
                         buy: getBuyData(albums[i])
-                    };
-                    album.tracks = getTrackData(sel('.item', albums[i]), album.artist, album_name);
-                    data.push(album);
-                    albums[i].playdarParsed = true;
+                    });
                 }
             }
             return data;
@@ -1414,28 +1440,31 @@ Playdar.Parse = {
     
     rdfa: function (context) {
         var sel = Playdar.Util.select;
-        function selExc (selector, exclude, context) {
-            return sel(selector + ':not(' + exclude + ' ' + selector + ')', context);
-        }
-        function selExcRec (selector, context) {
-            return sel(selector + ':not([typeof='+audioNS+':Recording] ' + selector + ')', context);
-        }
-        
-        function getNS (node, url) {
-            for (var i = 0; i < node.attributes.length; i++) {
-                var attr = node.attributes[i];
-                if (attr.nodeValue == url) {
-                    return attr.nodeName.replace('xmlns:', '');
-                }
-            }
-        }
         
         var htmlNode = sel('html')[0];
-        var commerceNS = getNS(htmlNode, 'http://purl.org/commerce#');
-        var audioNS = getNS(htmlNode, 'http://purl.org/media/audio#');
-        var mediaNS = getNS(htmlNode, 'http://purl.org/media#');
-        var dcNS = getNS(htmlNode, 'http://purl.org/dc/terms/');
-        var foafNS = getNS(htmlNode, 'http://xmlns.com/foaf/0.1/');
+        var commerceNS = Playdar.Parse.getNS(htmlNode, 'http://purl.org/commerce#');
+        var audioNS = Playdar.Parse.getNS(htmlNode, 'http://purl.org/media/audio#');
+        var mediaNS = Playdar.Parse.getNS(htmlNode, 'http://purl.org/media#');
+        var dcNS = Playdar.Parse.getNS(htmlNode, 'http://purl.org/dc/terms/')
+                || Playdar.Parse.getNS(htmlNode, 'http://purl.org/dc/elements/1.1/');
+        
+        var foafNS = Playdar.Parse.getNS(htmlNode, 'http://xmlns.com/foaf/0.1/');
+        var moNS = Playdar.Parse.getNS(htmlNode, 'http://purl.org/ontology/mo/');
+        
+        function selExcRec (selector, context) {
+            var final_selector = selector;
+            if (audioNS) {
+                final_selector += Playdar.Parse.getExc('[typeof='+audioNS+':Recording]', selector);
+            }
+            if (moNS) {
+                final_selector += Playdar.Parse.getExc('[typeof='+moNS+':Track]', selector);
+            }
+            return sel(final_selector, context);
+        }
+        
+        if (!audioNS && !moNS) {
+            
+        }
         
         function getBuyData (context, rec) {
             var buySel = rec ? sel : selExcRec;
@@ -1452,15 +1481,23 @@ Playdar.Parse = {
         
         function getTracks (context, artist, album) {
             var data = [];
-            var tracks = selExcRec('[typeof='+audioNS+':Recording]', context);
+            var selectors = [];
+            if (audioNS) {
+                selectors.push('[typeof='+audioNS+':Recording]');
+            }
+            if (moNS) {
+                selectors.push('[typeof='+moNS+':Track]');
+            }
+            var tracks = selExcRec(selectors.join(','), context);
             var i, track;
             for (i = 0; i < tracks.length; i++) {
                 if (!tracks[i].playdarParsed) {
                     track = {
                         title: Playdar.Parse.getContent(sel('[property='+dcNS+':title]', tracks[i])),
-                        artist: Playdar.Parse.getContent(sel('[property='+dcNS+':creator]', tracks[i]))
+                        artist: Playdar.Parse.getContent(sel('[property='+dcNS+':creator], [rel~='+foafNS+':maker] [property='+foafNS+':name]', tracks[i]))
                              || artist,
-                        album: album, // TODO
+                        album: Playdar.Parse.getContent(sel('[typeof='+moNS+':Record] [property='+dcNS+':title]'))
+                            || album,
                         position: Playdar.Parse.getContent(sel('[property='+mediaNS+':position]', tracks[i]))
                                || Playdar.Parse.getPosition(tracks[i]),
                         duration: Playdar.Parse.getContent(sel('[property='+mediaNS+':duration]', tracks[i]))
@@ -1478,6 +1515,9 @@ Playdar.Parse = {
         function getArtist (context) {
             // Check the dc:creator property for foaf:name or innerHTML
             var artist = selExcRec('[property='+dcNS+':creator]', context);
+            if (!artist.length) {
+                artist = selExcRec('[rel~='+foafNS+':maker]', context);
+            }
             var artistName;
             if (artist.length) {
                 artistName = Playdar.Parse.getContent(sel('[property='+foafNS+':name]', artist[0]));
@@ -1500,14 +1540,28 @@ Playdar.Parse = {
         
         function getAlbums (context) {
             var data = [];
-            var albums = sel('[typeof='+audioNS+':Album]', context);
-            var i, album, album_tracks;
+            var albums = sel('[typeof='+audioNS+':Album], [typeof='+moNS+':Record]', context);
+            var i, album, album_name, album_artist, album_tracks;
             for (i = 0; i < albums.length; i++) {
                 if (!albums[i].playdarParsed) {
-                    album = {
+                    albums[i].playdarParsed = true;
+                    album_name = Playdar.Parse.getContent(selExcRec('[property='+dcNS+':title]', albums[i]));
+                    if (!album_name) {
+                        continue;
+                    }
+                    album_artist = getArtist(albums[i]);
+                    if (!album_artist) {
+                        continue;
+                    }
+                    album_tracks = getTracks(albums[i], album_artist, album_name);
+                    if (!album_tracks.length) {
+                        continue;
+                    }
+                    data.push({
                         type: 'album',
-                        title: Playdar.Parse.getContent(selExcRec('[property='+dcNS+':title]', albums[i])),
-                        artist: getArtist(albums[i]),
+                        title: album_name,
+                        artist: album_artist,
+                        tracks: album_tracks,
                         image: Playdar.Parse.getProperty(selExcRec('[rel~='+mediaNS+':depiction]', albums[i]), 'src')
                             || Playdar.Parse.getProperty(selExcRec('[rev~='+mediaNS+':depiction]', albums[i]), 'src'),
                         download: Playdar.Parse.getProperty(selExcRec('[rel~='+mediaNS+':download]', albums[i]), 'href'),
@@ -1517,10 +1571,7 @@ Playdar.Parse = {
                         duration: Playdar.Parse.getContent(selExcRec('[property='+mediaNS+':duration]', albums[i]))
                                || Playdar.Parse.getContent(selExcRec('[property='+dcNS+':duration]', albums[i])),
                         buy: getBuyData(albums[i])
-                    };
-                    album.tracks = getTracks(albums[i], album.artist, album.title);
-                    data.push(album);
-                    albums[i].playdarParsed = true;
+                    });
                 }
             }
             return data;

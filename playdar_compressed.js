@@ -445,8 +445,10 @@ Playdar.scrobbler.stop();
 }
 if(this.nowplayingid){
 var _4e=this.soundmanager.getSoundById("s_"+this.nowplayingid);
-_4e.stop();
+if(_4e.playState==1){
 _4e.setPosition(1);
+_4e.stop();
+}
 this.nowplayingid=null;
 }
 if(Playdar.status_bar){

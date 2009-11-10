@@ -700,8 +700,10 @@ Playdar.Player.prototype = {
         }
         if (this.nowplayingid) {
             var sound = this.soundmanager.getSoundById('s_' + this.nowplayingid);
-            sound.stop();
-            sound.setPosition(1);
+            if (sound.playState == 1) {
+                sound.setPosition(1);
+                sound.stop();
+            }
             this.nowplayingid = null;
         }
         // Update status bar

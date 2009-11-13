@@ -98,7 +98,7 @@ function runTests (results) {
                 fireunit.compare(EXPECTED[i].title, results[i].title, 'Album title');
                 delete results[i].title;
             } else {
-                fireunit.compare(window.title || window.location.href, results[i].title, 'Page title');
+                fireunit.compare(EXPECTED[i].title, results[i].title, 'Page title');
             }
             delete results[i].title;
             keys = 0;

@@ -30,6 +30,10 @@ Playdar = {
                          || window.document.title;
         auth_details.website = auth_details.website
                             || window.location.protocol + '//' + window.location.host + '/';
+        // Convert a relative path to an absolute one
+        if (auth_details.receiverurl) {
+            auth_details.receiverurl = Playdar.Util.location_from_url(auth_details.receiverurl).href;
+        }
         new Playdar.Client(auth_details);
         new Playdar.Boffin();
     },

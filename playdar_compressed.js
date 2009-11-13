@@ -2,6 +2,9 @@ Playdar={VERSION:"0.4.6",SERVER_ROOT:"localhost",SERVER_PORT:"60210",STATIC_HOST
 var _1=_1||{};
 _1.name=_1.name||window.document.title;
 _1.website=_1.website||window.location.protocol+"//"+window.location.host+"/";
+if(_1.receiverurl){
+_1.receiverurl=Playdar.Util.location_from_url(_1.receiverurl).href;
+}
 new Playdar.Client(_1);
 new Playdar.Boffin();
 },setup_player:function(_2){

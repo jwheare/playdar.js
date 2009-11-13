@@ -1,7 +1,7 @@
 Playdar={VERSION:"0.4.6",SERVER_ROOT:"localhost",SERVER_PORT:"60210",STATIC_HOST:"http://www.playdar.org",STAT_TIMEOUT:2000,AUTH_COOKIE_NAME:"Playdar.Auth",AUTH_POPUP_NAME:"Playdar.AuthPopup",AUTH_POPUP_SIZE:{"w":500,"h":260},QUERIES_POPUP_NAME:"Playdar.QueriesPopup",QUERIES_POPUP_SIZE:{"w":640,"h":700},MAX_POLLS:4,MAX_CONCURRENT_RESOLUTIONS:5,USE_STATUS_BAR:true,USE_SCROBBLER:true,client:null,status_bar:null,player:null,setup:function(_1){
 var _1=_1||{};
 _1.name=_1.name||window.document.title;
-_1.website=_1.website||window.location.href;
+_1.website=_1.website||window.location.protocol+"//"+window.location.host+"/";
 new Playdar.Client(_1);
 new Playdar.Boffin();
 },setup_player:function(_2){

@@ -25,8 +25,11 @@ Playdar = {
     player: null,
     setup: function (auth_details) {
         var auth_details = auth_details || {};
-        auth_details.name = auth_details.name || window.document.title;
-        auth_details.website = auth_details.website || window.location.href;
+        // Set default details
+        auth_details.name = auth_details.name
+                         || window.document.title;
+        auth_details.website = auth_details.website
+                            || window.location.protocol + '//' + window.location.host + '/';
         new Playdar.Client(auth_details);
         new Playdar.Boffin();
     },

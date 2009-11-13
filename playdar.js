@@ -24,6 +24,9 @@ Playdar = {
     status_bar: null,
     player: null,
     setup: function (auth_details) {
+        var auth_details = auth_details || {};
+        auth_details.name = auth_details.name || window.document.title;
+        auth_details.website = auth_details.website || window.location.href;
         new Playdar.Client(auth_details);
         new Playdar.Boffin();
     },
@@ -640,7 +643,7 @@ Playdar.Player.MIMETYPES = {
 Playdar.Player.prototype = {
     get_mime_types: function () {
         var mime_types = [];
-        for (type in Playdar.Player.MIMETYPES) {
+        for (var type in Playdar.Player.MIMETYPES) {
             mime_types.push(type);
         }
         return mime_types;
@@ -1443,7 +1446,7 @@ Playdar.Parse = {
             if (tracks.length) {
                 lists.push({
                     type: 'page',
-                    title: window.title || window.location.href,
+                    title: window.document.title || window.location.href,
                     tracks: tracks
                 });
             }
@@ -1599,7 +1602,7 @@ Playdar.Parse = {
             if (tracks.length) {
                 lists.push({
                     type: 'page',
-                    title: window.title || window.location.href,
+                    title: window.document.title || window.location.href,
                     tracks: tracks
                 });
             }

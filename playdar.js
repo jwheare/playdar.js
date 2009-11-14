@@ -32,7 +32,7 @@ Playdar = {
     unload: function () {
         if (Playdar.player) {
             // Stop the music
-            Playdar.player.stopCurrent(true);
+            Playdar.player.stop_current(true);
         } else if (Playdar.scrobbler) {
             // Stop scrobbling
             Playdar.scrobbler.stop();

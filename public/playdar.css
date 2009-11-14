@@ -70,7 +70,7 @@ ol#results li span.matches {
     background: #59814B;
 }
 .noMatch {
-    background: red;
+    background: #B80000;
 }
 .match {
     background: #D48200;

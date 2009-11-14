@@ -1,4 +1,5 @@
 (function () {
+    $('#latestVersion').text('(v'+Playdar.VERSION+')');
     var resolveOnAuth = false;
     Playdar.auth_details.receiverurl = Playdar.Util.location_from_url("/playdar_auth.html").href;
     Playdar.USE_STATUS_BAR = false;

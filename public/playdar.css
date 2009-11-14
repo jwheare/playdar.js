@@ -1,0 +1,40 @@
+body {
+    margin: 0;
+    padding: 0 15px;
+    font: normal 15px 'Helvetica', sans-serif;
+    color: #E1E1E1;
+    background: #363A2B;
+}
+a img,
+img {
+    border: 0;
+}
+a {
+    color: #86B2DE;
+}
+
+pre {
+    padding: 0.5em;
+    background: #2E303A;
+    color: #EAE6D3;
+    width: 50em;
+    overflow: auto;
+}
+code {
+    font: normal 13px 'Consolas', 'Andale Mono', 'Courier', monospace;
+}
+pre code span.t {
+    color: #EAADAA;
+}
+pre code span.a {
+    color: #AEEABB;
+}
+pre code span.c {
+    color: #9C9A8D;
+}
+pre code span.k {
+    color: #9F99EA;
+}
+pre code span.m {
+    color: #BDDEEA;
+}

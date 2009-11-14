@@ -276,7 +276,7 @@ Playdar.Client.prototype = {
                     if (callback) {
                         qid = callback(track);
                     }
-                    this.resolve(track.artist, track.album, track.title, qid);
+                    this.resolve(track.artist, track.title, track.album, qid);
                 }
             }
             return data;
@@ -287,7 +287,7 @@ Playdar.Client.prototype = {
     
     // CONTENT RESOLUTION
     
-    resolve: function (artist, album, track, qid, url) {
+    resolve: function (artist, track, album, qid, url) {
         if (!this.is_authed()) {
             return false;
         }

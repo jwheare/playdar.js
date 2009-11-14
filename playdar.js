@@ -1,5 +1,5 @@
 /*!
- * Playdar JavaScript Library
+ * Playdar.js JavaScript client library
  * http://www.playdarjs.org/
  *
  * Copyright (c) 2009 James Wheare

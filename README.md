@@ -1,5 +1,7 @@
 [Playdar.js](http://www.playdarjs.org/) is a JavaScript client library for interacting with the [Playdar HTTP API](http://www.playdar.org/api.html).
 
+The source code is distributed under the terms of the [BSD license](http://www.playdarjs.org/LICENSE).
+
 Here’s how you can use it to query Playdar for a specific track:
 
     <!-- Include the library -->

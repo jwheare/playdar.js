@@ -286,7 +286,15 @@ Playdar.Client.prototype = {
     },
     
     // CONTENT RESOLUTION
-    
+    /**
+     * Playdar.client.resolve(artist, track[, album][, qid])
+     * - artist (String): Track artist
+     * - track (String): Track title
+     * - album (String): Track album. This will only be used for sorting results
+     * - qid (UUID): ID to use for this query
+     * 
+     * Queries the Playdar API by first calling the `resolve` method then initiates polling of `get_results`
+    **/    
     resolve: function (artist, track, album, qid, url) {
         if (!this.is_authed()) {
             return false;

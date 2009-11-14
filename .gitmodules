@@ -1,0 +1,3 @@
+[submodule "public/sm2"]
+	path = public/sm2
+	url = git://github.com/jwheare/soundmanager2.git

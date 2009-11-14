@@ -2,6 +2,7 @@
     function resolveForm () {
         Playdar.client.resolve($('#demo input[name=artist]').val(), $('#demo input[name=track]').val());
     }
+    Playdar.auth_details.receiverurl = Playdar.Util.location_from_url("/playdar_auth.html").href;
     Playdar.setupClient({
         onStat: function (status) {
             if (!status.authenticated) {

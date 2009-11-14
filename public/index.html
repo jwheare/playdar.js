@@ -21,7 +21,7 @@
         <span class="c">// This callback will be fired when the browser is authorised to query Playdar.</span>
         <span class="m">onAuth</span>: <span class="k">function</span> () {
             <span class="c">// At this point, we can query the Playdar API for a track and start polling for matches.</span>
-            Playdar.client.<span class="m">resolve</span>('<span class="a"><input name="artist" value="Weezer"></span>', '<span class="a"><input name="track" value="Buddy Holly"></span>');
+            Playdar.client.<span class="m">resolve</span>("<input name="artist" value="Weezer">", "<input name="track" value="Buddy Holly">");
         },
         
         <span class="c">// This callback will be fired in response to each poll, and gets passed the results so far.</span>

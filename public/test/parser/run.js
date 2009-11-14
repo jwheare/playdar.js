@@ -1,8 +1,6 @@
-Playdar.setup({
-    name: "Playdar.js Parse Tests",
-    website: "http://www.playdarjs.org/"
-});
-Playdar.client.register_listeners({
+Playdar.auth_details.name = "Playdar.js Parse Tests";
+Playdar.auth_details.receiverurl = Playdar.Util.location_from_url("/playdar_auth.html").href;
+Playdar.setupClient({
     onStat: function (detected) {
         if (!detected) {
             console.warn('no playdar');
@@ -21,7 +19,7 @@ Playdar.client.register_listeners({
 
 /* Soundmanager options */
 soundManager.waitForWindowLoad = true;
-soundManager.url = '/soundmanager2_flash9_xdomain.swf';
+soundManager.url = '/sm2/swf/soundmanager2_flash9_xdomain.swf';
 
 // Enable flash 9 features, like mpeg4 support
 soundManager.flashVersion = 9;
@@ -36,8 +34,8 @@ soundManager.flashLoadTimeout = 0;
 
 soundManager.onready(function (status) {
     if (status.success) {
-        Playdar.setup_player(soundManager);
-        Playdar.client.init();
+        Playdar.setupPlayer(soundManager);
+        Playdar.client.go();
     }
 });
 

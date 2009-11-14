@@ -1,4 +1,4 @@
-/*
+/*!
  * Playdar JavaScript Library
  * http://www.playdarjs.org/
  *

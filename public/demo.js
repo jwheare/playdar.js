@@ -4,6 +4,7 @@
     Playdar.auth_details.receiverurl = Playdar.Util.location_from_url("/playdar_auth.html").href;
     Playdar.USE_STATUS_BAR = false;
     function resolveForm () {
+        $('#sweep').show();
         Playdar.client.resolve($('#demo input[name=artist]').val(), $('#demo input[name=track]').val());
     }
     Playdar.setupClient({
@@ -54,6 +55,9 @@
                     console.dir(response);
                 }
             }
+        },
+        onResolveIdle: function () {
+            $('#sweep').hide();
         }
     });
     

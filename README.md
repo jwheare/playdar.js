@@ -11,7 +11,7 @@ Here’s how you can use it to query Playdar for a specific track:
             // Called when the browser is authorised to query Playdar.
             onAuth: function () {
                 // At this point, we can query the Playdar API for a track and start polling for matches.
-                Playdar.client.resolve("Mokele", "Hiding in your Insides!");
+                Playdar.client.resolve("Mokele", "Hiding in your Insides");
             },
             
             // Called in response to each poll with the results so far.

@@ -26,7 +26,7 @@
         <span class="c">// Called when the browser is authorised to query Playdar.</span>
         <span class="m">onAuth</span>: <span class="k">function</span> () {
             <span class="c">// At this point, we can query the Playdar API for a track and start polling for matches.</span>
-            Playdar.client.<span class="m">resolve</span>("<input name="artist" value="Mokele" onclick="this.focus(); this.select();">", "<input name="track" value="Hiding in your Insides!" onclick="this.focus(); this.select();">");
+            Playdar.client.<span class="m">resolve</span>("<input name="artist" value="Mokele" onclick="this.focus(); this.select();">", "<input name="track" value="Hiding in your Insides" onclick="this.focus(); this.select();">");
         },
         
         <span class="c">// Called in response to each poll with the results so far.</span>
@@ -39,13 +39,13 @@
         }
         
     });
-    
+    <embed src="/img/playdar_icon animated.swf" wmode="transparent" width="64" height="64" id="sweep">
     <span class="c">/* The client is now ready to check in with Playdar. */</span>
     Playdar.client.<span class="m"><input type="submit" value="go"></span>();
 <span class="t">&lt;/script&gt;</span></code></pre>
     </form>
     
-    <p>Fill in the form values and press return or click the “go” button for a live demo. Results will appear below:</p>
+    <p>Fill in the form values and press return or click the “go” button for a live demo. The number of results will appear below:</p>
     <ol id="results"></ol>
     <p id="legend">
         <span class="progress">In Progress</span>

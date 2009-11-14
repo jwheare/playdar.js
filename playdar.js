@@ -21,7 +21,7 @@ Playdar = {
     USE_SCROBBLER: true,
     
     client: null,
-    status_bar: null,
+    statusBar: null,
     player: null,
     auth_details: {
         name: window.document.title,
@@ -132,7 +132,7 @@ Playdar.Client.prototype = {
         // Update status bar
         if (Playdar.USE_STATUS_BAR) {
             new Playdar.StatusBar();
-            Playdar.status_bar.handle_stat(response);
+            Playdar.statusBar.handle_stat(response);
         }
         this.listeners.onStat(response);
         
@@ -159,8 +159,8 @@ Playdar.Client.prototype = {
         // Callback
         this.listeners.onAuthClear();
         // Update status bar
-        if (Playdar.status_bar) {
-            Playdar.status_bar.offline();
+        if (Playdar.statusBar) {
+            Playdar.statusBar.offline();
         }
     },
     is_authed: function () {
@@ -213,8 +213,8 @@ Playdar.Client.prototype = {
         if (!Playdar.auth_details.receiverurl) {
             this.listeners.onStartManualAuth();
             // Show manual auth form
-            if (Playdar.status_bar) {
-                Playdar.status_bar.start_manual_auth();
+            if (Playdar.statusBar) {
+                Playdar.statusBar.start_manual_auth();
             }
         }
     },
@@ -296,8 +296,8 @@ Playdar.Client.prototype = {
             query.mimetypes = Playdar.player.get_mime_types().join(',');
         }
         // Update resolving progress status
-        if (Playdar.status_bar) {
-            Playdar.status_bar.increment_requests();
+        if (Playdar.statusBar) {
+            Playdar.statusBar.increment_requests();
         }
         
         this.resolution_queue.push(query);
@@ -328,8 +328,8 @@ Playdar.Client.prototype = {
         this.initialise_resolve();
         // Callback
         this.listeners.onCancelResolve();
-        if (Playdar.status_bar) {
-            Playdar.status_bar.cancel_resolve();
+        if (Playdar.statusBar) {
+            Playdar.statusBar.cancel_resolve();
         }
     },
     initialise_resolve: function () {
@@ -403,8 +403,8 @@ Playdar.Client.prototype = {
         if (this.resolutions_in_progress.queries[response.qid]) {
             var final_answer = this.poll_results(response, this.get_results);
             // Status bar handler
-            if (Playdar.status_bar) {
-                Playdar.status_bar.handle_results(response, final_answer);
+            if (Playdar.statusBar) {
+                Playdar.statusBar.handle_results(response, final_answer);
             }
             if (this.results_handlers[response.qid]) {
                 // try a custom handler registered for this query id
@@ -423,8 +423,8 @@ Playdar.Client.prototype = {
     },
     get_last_results: function () {
         if (this.last_qid) {
-            if (Playdar.status_bar) {
-                Playdar.status_bar.increment_requests();
+            if (Playdar.statusBar) {
+                Playdar.statusBar.increment_requests();
             }
             this.get_results(this.last_qid);
         }
@@ -619,8 +619,8 @@ Playdar.Player.prototype = {
         
         var callback_options = [options];
         // Wrap sound progress callbacks with status bar
-        if (Playdar.status_bar) {
-            callback_options.push(Playdar.status_bar.get_sound_callbacks(result));
+        if (Playdar.statusBar) {
+            callback_options.push(Playdar.statusBar.get_sound_callbacks(result));
         }
         // Wrap sound lifecycle callbacks in scrobbling calls
         if (Playdar.scrobbler) {
@@ -641,8 +641,8 @@ Playdar.Player.prototype = {
             if (sound.playState === 0) {
                 this.nowplayingid = sid;
                 // Update status bar
-                if (Playdar.status_bar) {
-                    Playdar.status_bar.play_handler(this.streams[sid]);
+                if (Playdar.statusBar) {
+                    Playdar.statusBar.play_handler(this.streams[sid]);
                 }
             }
         }
@@ -665,8 +665,8 @@ Playdar.Player.prototype = {
             this.nowplayingid = null;
         }
         // Update status bar
-        if (Playdar.status_bar) {
-            Playdar.status_bar.stop_current();
+        if (Playdar.statusBar) {
+            Playdar.statusBar.stop_current();
         }
     },
     stop_stream: function (sid) {
@@ -690,7 +690,7 @@ Playdar.Player.prototype = {
 };
 
 Playdar.StatusBar = function () {
-    Playdar.status_bar = this;
+    Playdar.statusBar = this;
     
     this.queries_popup = null;
     
@@ -709,18 +709,18 @@ Playdar.StatusBar.prototype = {
     build: function () {
         /* Status bar
            ---------- */
-        var status_bar = document.createElement("div");
-        status_bar.style.position = 'fixed';
-        status_bar.style.bottom = 0;
-        status_bar.style.left = 0;
-        status_bar.style.zIndex = 100;
-        status_bar.style.width = '100%';
-        status_bar.style.height = '36px';
-        status_bar.style.padding = '7px 0';
-        status_bar.style.borderTop = '2px solid #4c7a0f';
-        status_bar.style.font = 'normal 13px/18px "Calibri", "Lucida Grande", sans-serif';
-        status_bar.style.color = "#335507";
-        status_bar.style.background = '#e8f9bb';
+        var statusBar = document.createElement("div");
+        statusBar.style.position = 'fixed';
+        statusBar.style.bottom = 0;
+        statusBar.style.left = 0;
+        statusBar.style.zIndex = 100;
+        statusBar.style.width = '100%';
+        statusBar.style.height = '36px';
+        statusBar.style.padding = '7px 0';
+        statusBar.style.borderTop = '2px solid #4c7a0f';
+        statusBar.style.font = 'normal 13px/18px "Calibri", "Lucida Grande", sans-serif';
+        statusBar.style.color = "#335507";
+        statusBar.style.background = '#e8f9bb';
         
         /* Left column
            ----------- */
@@ -844,11 +844,11 @@ Playdar.StatusBar.prototype = {
         
         /* Build status bar
            --------------- */
-        status_bar.appendChild(right_col);
-        status_bar.appendChild(left_col);
+        statusBar.appendChild(right_col);
+        statusBar.appendChild(left_col);
         
         /* Build status bar */
-        document.body.appendChild(status_bar);
+        document.body.appendChild(statusBar);
         
         // Adjust the page bottom margin to fit status bar
         var marginBottom = document.body.style.marginBottom;
@@ -860,7 +860,7 @@ Playdar.StatusBar.prototype = {
         }
         document.body.style.marginBottom = (marginBottom.replace('px', '') - 0) + 36 + (7*2) + 2 + 'px';
         
-        return status_bar;
+        return statusBar;
     },
     
     ready: function () {
@@ -926,10 +926,10 @@ Playdar.StatusBar.prototype = {
     get_sound_callbacks: function (result) {
         return {
             whileplaying: function () {
-                Playdar.status_bar.playing_handler(this);
+                Playdar.statusBar.playing_handler(this);
             },
             whileloading: function () {
-                Playdar.status_bar.loading_handler(this);
+                Playdar.statusBar.loading_handler(this);
             }
         };
     },

@@ -945,21 +945,6 @@ Playdar.StatusBar.prototype = {
         }
     },
     
-    get_queries_popup_url: function () {
-        return Playdar.STATIC_HOST + '/demos/tracks.html';
-    },
-    open_queries_popup: function () {
-        if (this.queries_popup === null || this.queries_popup.closed) {
-            this.queries_popup = window.open(
-                this.get_queries_popup_url(),
-                Playdar.QUERIES_POPUP_NAME,
-                Playdar.Util.get_popup_options(Playdar.QUERIES_POPUP_SIZE)
-            );
-        } else {
-            this.queries_popup.focus();
-        }
-    },
-    
     show_resolution_status: function () {
         if (this.query_count) {
             var status = " ";

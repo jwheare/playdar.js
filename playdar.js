@@ -1,3 +1,11 @@
+/*
+ * Playdar JavaScript Library
+ * http://www.playdarjs.org/
+ *
+ * Copyright (c) 2009 James Wheare
+ * Distributed under the terms of the BSD licence
+ * http://www.playdarjs.org/LICENSE
+ */
 Playdar = {
     VERSION: "0.5.1",
     SERVER_ROOT: "localhost",

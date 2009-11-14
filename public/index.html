@@ -8,16 +8,28 @@
         <link rel="stylesheet" href="/playdar.css">
     </head>
     <body>
+        
         <span id="stat">Scanning for Playdar…</span>
+        
         <h1 id="logo">Playdar.js</h1>
+        
         <p>Playdar.js is a JavaScript client library for interacting with the <a href="http://www.playdar.org/api.html">Playdar HTTP API</a>.</p>
+        
         <p>
-            Source code and full documentation: <a href="http://github.com/jwheare/playdar.js">Playdar.js on GitHub</a> | <a href="http://github.com/jwheare/playdar.js/issues">Issue tracker</a><br>
-            Download latest: <a href="http://github.com/jwheare/playdar.js/blob/master/playdar.js">playdar.js</a> <span id="latestVersion"></span>
+            Download latest: <a href="/playdar.js">playdar.js</a>
+            <span id="latestVersion"></span>
+            <br>
+            <a href="http://github.com/jwheare/playdar.js">Source code and full documentation (GitHub)</a>
+            | <a href="/LICENSE">BSD licensed</a> 
+            | <a href="http://github.com/jwheare/playdar.js/issues">Issue tracker</a>
         </p>
+        
         <p>Here’s how you can use it to query Playdar for a specific track.</p>
+        
+        
+        
         <form id="demo">
-        <pre><code><span class="c">&lt;!-- Include the library --&gt;</span>
+            <pre><code><span class="c">&lt;!-- Include the library --&gt;</span>
 <span class="t">&lt;script src="<span class="a">playdar.js</span>"&gt;&lt;/script&gt;</span>
 <span class="t">&lt;script&gt;</span>
     <span class="c">/* First, set the client up with some callbacks. */</span>
@@ -37,33 +49,39 @@
                 console.<span class="m">dir</span>(response);
             }
         }
-        
+       <embed src="/img/playdar_icon animated.swf" wmode="transparent" width="64" height="64" id="sweep"> 
     });
-    <embed src="/img/playdar_icon animated.swf" wmode="transparent" width="64" height="64" id="sweep">
     <span class="c">/* The client is now ready to check in with Playdar. */</span>
     Playdar.client.<span class="m"><input type="submit" value="go"></span>();
 <span class="t">&lt;/script&gt;</span></code></pre>
-    </form>
-    
-    <p>Fill in the form values and press return or click the “go” button for a live demo. The number of results will appear below:</p>
-    <ol id="results"></ol>
-    <p id="legend">
-        <span class="progress">In Progress</span>
-        <span class="noMatch">No Results</span>
-        <span class="match">Partial Matches</span>
-        <span class="perfectMatch">Perfect Match</span>
-    </p>
-    
-    <h2>Websites using Playdar.js</h2>
-    
-    <ul id="featured">
-        <li><a href="http://www.playlick.com/">Playlick</a> - Playlist player/manager that lets you import playlists from Last.fm, Spotify, XSPF and podcasts. You can also import album listings and generate a playlist by combining two Last.fm profiles.</li>
-        <li><a href="http://player.playlick.com/">Playlick Player</a> - Web based player/browser that imports your Last.fm library.</li>
-        <li><a href="http://spiffdar.org/">Spiffdar</a> - Playlist player/manager and XSPF importer.</li>
-    </ul>
-    
-    <script src="/jquery.js"></script>
-    <script src="/playdar.js"></script>
-    <script src="/demo.js"></script>
+        </form>
+        
+        
+        
+        <p>Fill in the form values and press return or click the “go” button for a live demo. The number of results will appear below:</p>
+        <ol id="results"></ol>
+        <p id="legend">
+            <span class="progress">In Progress</span>
+            <span class="noMatch">No Results</span>
+            <span class="match">Partial Matches</span>
+            <span class="perfectMatch">Perfect Match</span>
+        </p>
+        
+        <h2>Websites using Playdar.js</h2>
+        
+        <ul id="featured">
+            <li><a href="http://www.playlick.com/">Playlick</a> - Playlist player/manager that lets you import playlists from Last.fm, Spotify, XSPF and podcasts. You can also import album listings and generate a playlist by combining two Last.fm profiles.</li>
+            <li><a href="http://player.playlick.com/">Playlick Player</a> - Web based player/browser that imports your Last.fm library.</li>
+            <li><a href="http://spiffdar.org/">Spiffdar</a> - Playlist player/manager and XSPF importer.</li>
+        </ul>
+        
+        <p id="footer">
+            Made by <a href="http://james.wheare.org/">James Wheare</a>
+            | Playdar logo by <a href="http://www.irvinebrown.com/hackspace_playdar.html#playdar">Matthew Irvine Brown</a>
+        </p>
+        
+        <script src="/jquery.js"></script>
+        <script src="/playdar.js"></script>
+        <script src="/demo.js"></script>
     </body>
 </html>

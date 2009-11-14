@@ -2,6 +2,7 @@ body {
     margin: 0;
     padding: 0 15px 15px 15px;
     font: normal 15px 'Helvetica', sans-serif;
+    line-height: 1.2;
     color: #e8f9bb;
     background: #3B5536;
 }
@@ -102,4 +103,8 @@ ul#featured {
 }
 ul#featured li {
     margin: 0 0 5px 0;
+}
+
+p#footer {
+    margin-top: 30px;
 }

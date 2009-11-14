@@ -73,7 +73,7 @@ ol#results li span.matches {
     background: red;
 }
 .match {
-    background: orange;
+    background: #D48200;
 }
 .perfectMatch {
     background: green;

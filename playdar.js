@@ -935,6 +935,7 @@ Playdar.StatusBar.prototype = {
             + '" />'
             + '</form>';
         this.status.innerHTML = form;
+        Playdar.Util.select('#' + input_id)[0].focus();
     },
     
     handle_stat: function (response) {

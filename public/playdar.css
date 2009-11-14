@@ -13,6 +13,13 @@ a {
     color: #9FDEFD;
 }
 
+span#stat {
+    float: right;
+}
+span#stat.notFound {
+    color: orange;
+}
+
 h1#logo {
     background: url('/img/playdar_icon_32x32.png') no-repeat 0 50%;
     padding-left: 47px;

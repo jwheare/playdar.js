@@ -399,7 +399,7 @@ Playdar.Client.prototype = {
             return true;
         }
         // Stop if the query is solved
-        if (response.query.solved == true) {
+        if (response.solved === true) {
             return true;
         }
         // Stop if we've exceeded our poll limit

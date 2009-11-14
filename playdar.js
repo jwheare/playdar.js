@@ -1403,7 +1403,6 @@ Playdar.Parse = {
             var i, album_name, album_artist, album_tracks, album, item_artist, item_track, tracks;
             for (i = 0; i < albums.length; i++) {
                 if (!albums[i].playdarParsed) {
-                    albums[i].playdarParsed = true;
                     album_name = Playdar.Parse.getContent(selExcRec('.album', albums[i]));
                     if (!album_name) {
                         continue;
@@ -1428,6 +1427,7 @@ Playdar.Parse = {
                         duration: Playdar.Parse.getContent(selExcRec('.duration', albums[i])),
                         buy: getBuyData(albums[i])
                     });
+                    albums[i].playdarParsed = true;
                 }
             }
             return data;
@@ -1475,7 +1475,7 @@ Playdar.Parse = {
         }
         
         if (!audioNS && !moNS) {
-            
+            return [];
         }
         
         function getBuyData (context, rec) {
@@ -1556,7 +1556,6 @@ Playdar.Parse = {
             var i, album, album_name, album_artist, album_tracks;
             for (i = 0; i < albums.length; i++) {
                 if (!albums[i].playdarParsed) {
-                    albums[i].playdarParsed = true;
                     album_name = Playdar.Parse.getContent(selExcRec('[property='+dcNS+':title]', albums[i]));
                     if (!album_name) {
                         continue;
@@ -1584,6 +1583,7 @@ Playdar.Parse = {
                                || Playdar.Parse.getContent(selExcRec('[property='+dcNS+':duration]', albums[i])),
                         buy: getBuyData(albums[i])
                     });
+                    albums[i].playdarParsed = true;
                 }
             }
             return data;

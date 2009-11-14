@@ -269,7 +269,7 @@ Playdar.Client.prototype = {
         if (!this.is_authed()) {
             return false;
         }
-        var qid, i, j, list, j, track;
+        var qid, i, j, list, track;
         try {
             var mf = Playdar.Parse.microformats(context);
             var rdfa = Playdar.Parse.rdfa(context);
@@ -690,7 +690,7 @@ Playdar.Player.prototype = {
         var sound = this.soundmanager.getSoundById('s_' + sid);
         if (this.nowplayingid != sid) {
             this.stop_current();
-            if (sound.playState == 0) {
+            if (sound.playState === 0) {
                 this.nowplayingid = sid;
                 // Update status bar
                 if (Playdar.status_bar) {
@@ -1121,12 +1121,13 @@ Playdar.Util = {
     
     // Cookie helpers
     setcookie: function (name, value, days) {
+        var expires;
         if (days) {
             var date = new Date();
             date.setTime(date.getTime() + (days*24*60*60*1000));
-            var expires = "; expires=" + date.toGMTString();
+            expires = "; expires=" + date.toGMTString();
         } else {
-            var expires = "";
+            expires = "";
         }
         document.cookie = name + "=" + value + expires + "; path=/";
     },
@@ -1138,7 +1139,7 @@ Playdar.Util = {
             while (c.charAt(0) == ' ') {
                 c = c.substring(1, c.length);
             }
-            if (c.indexOf(namekey) == 0) {
+            if (c.indexOf(namekey) === 0) {
                 return c.substring(namekey.length, c.length);
             }
         }
@@ -1243,7 +1244,6 @@ Playdar.Util = {
             }
         }
         var final_options = {};
-        var key, mapped_options;
         // Merge the mapped callback options
         for (i = 0; i < keys.length; i++) {
             var key = keys[i];
@@ -1414,7 +1414,7 @@ Playdar.Parse = {
         function getAlbums (context) {
             var data = [];
             var albums = sel('.haudio', context);
-            var i, album_name, album_artist, album_tracks, album, item_artist, item_track, tracks, data;
+            var i, album_name, album_artist, album_tracks, album, item_artist, item_track, tracks;
             for (i = 0; i < albums.length; i++) {
                 if (!albums[i].playdarParsed) {
                     albums[i].playdarParsed = true;

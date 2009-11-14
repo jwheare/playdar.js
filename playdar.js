@@ -321,7 +321,8 @@ Playdar.Client.prototype = {
     },
     cancel_resolve: function () {
         this.initialiseResolve();
-        // Callback
+        // Callbacks
+        this.listeners.onResolveIdle();
         this.listeners.onCancelResolve();
         if (Playdar.statusBar) {
             Playdar.statusBar.cancelResolve();

@@ -1,5 +1,5 @@
 Playdar = {
-    VERSION: "0.4.6",
+    VERSION: "0.5.0",
     SERVER_ROOT: "localhost",
     SERVER_PORT: "60210",
     STATIC_HOST: "http://www.playdar.org",
@@ -23,21 +23,14 @@ Playdar = {
     client: null,
     status_bar: null,
     player: null,
-    setup: function (auth_details) {
-        var auth_details = auth_details || {};
-        // Set default details
-        auth_details.name = auth_details.name
-                         || window.document.title;
-        auth_details.website = auth_details.website
-                            || window.location.protocol + '//' + window.location.host + '/';
-        // Convert a relative path to an absolute one
-        if (auth_details.receiverurl) {
-            auth_details.receiverurl = Playdar.Util.location_from_url(auth_details.receiverurl).href;
-        }
-        new Playdar.Client(auth_details);
-        new Playdar.Boffin();
+    auth_details: {
+        name: window.document.title,
+        website: window.location.protocol + '//' + window.location.host + '/'
     },
-    setup_player: function (soundmanager) {
+    setupClient: function (listeners) {
+        new Playdar.Client(listeners);
+    },
+    setupPlayer: function (soundmanager) {
         new Playdar.Player(soundmanager);
     },
     unload: function () {
@@ -58,6 +51,9 @@ Playdar.DefaultListeners = {
         } else {
             // Playdar not found
         }
+    },
+    onStartManualAuth: function () {
+        // No receiverurl, need to provide a way to enter auth token
     },
     onAuth: function () {
         // Playdar authorised
@@ -87,7 +83,7 @@ Playdar.DefaultListeners = {
     }
 };
 
-Playdar.Client = function (auth_details, listeners) {
+Playdar.Client = function (listeners) {
     Playdar.client = this;
     
     this.auth_token = false;
@@ -106,8 +102,6 @@ Playdar.Client = function (auth_details, listeners) {
     **/
     this.initialise_resolve();
     
-    // Setup auth
-    this.auth_details = auth_details;
     // Setup listeners
     this.register_listeners(Playdar.DefaultListeners);
     this.register_listeners(listeners);
@@ -139,7 +133,7 @@ Playdar.Client.prototype = {
     
     // INIT / STAT / AUTH
     
-    init: function () {
+    go: function () {
         if (!this.is_authed()) {
             this.auth_token = Playdar.Util.getcookie(Playdar.AUTH_COOKIE_NAME);
         }
@@ -204,7 +198,7 @@ Playdar.Client.prototype = {
         });
     },
     get_auth_url: function () {
-        return this.get_base_url("/auth_1/", this.auth_details);
+        return this.get_base_url("/auth_1/", Playdar.auth_details);
     },
     get_auth_link_html: function (title) {
         title = title || "Connect";
@@ -231,7 +225,8 @@ Playdar.Client.prototype = {
         } else {
             this.auth_popup.focus();
         }
-        if (!this.auth_details.receiverurl) {
+        if (!Playdar.auth_details.receiverurl) {
+            this.listeners.onStartManualAuth();
             // Show manual auth form
             if (Playdar.status_bar) {
                 Playdar.status_bar.start_manual_auth();

@@ -1,5 +1,5 @@
 Playdar = {
-    VERSION: "0.5.0",
+    VERSION: "0.5.1",
     SERVER_ROOT: "localhost",
     SERVER_PORT: "60210",
     STATIC_HOST: "http://www.playdar.org",
@@ -27,6 +27,7 @@ Playdar = {
         name: window.document.title,
         website: window.location.protocol + '//' + window.location.host + '/'
     },
+    nop: function () {},
     setupClient: function (listeners) {
         new Playdar.Client(listeners);
     },
@@ -45,42 +46,14 @@ Playdar = {
 };
 
 Playdar.DefaultListeners = {
-    onStat: function (detected) {
-        if (detected) {
-            // Playdar detected
-        } else {
-            // Playdar not found
-        }
-    },
-    onStartManualAuth: function () {
-        // No receiverurl, need to provide a way to enter auth token
-    },
-    onAuth: function () {
-        // Playdar authorised
-    },
-    onAuthClear: function () {
-        // Playdar deauthorised
-    },
-    onResults: function (response, final_answer) {
-        if (final_answer) {
-            if (response.results.length) {
-                // Found results
-            } else {
-                // No results
-            }
-        } else {
-            // Still polling
-        }
-    },
-    onTagCloud: function (response) {
-        // Tag cloud response
-    },
-    onRQL: function (response) {
-        // RQL playlist response
-    },
-    onResolveIdle: function () {
-        // Resolution queue is empty and nothing in progress
-    }
+    onStartStat: Playdar.nop,
+    onStat: Playdar.nop,
+    onStartManualAuth: Playdar.nop,
+    onAuth: Playdar.nop,
+    onAuthClear: Playdar.nop,
+    onCancelResolve: Playdar.nop,
+    onResults: Playdar.nop,
+    onResolveIdle: Playdar.nop
 };
 
 Playdar.Client = function (listeners) {
@@ -110,7 +83,7 @@ Playdar.Client = function (listeners) {
 };
 Playdar.Client.prototype = {
     register_listener: function (event, callback) {
-        callback = callback || Playdar.Util.null_callback;
+        callback = callback || Playdar.nop;
         this.listeners[event] = function () { return callback.apply(Playdar.client, arguments); };
     },
     register_listeners: function (listeners) {
@@ -140,7 +113,10 @@ Playdar.Client.prototype = {
         this.stat();
     },
     
-    stat: function () {
+    stat: function (postAuth) {
+        if (!postAuth) {
+            this.listeners.onStartStat();
+        }
         setTimeout(function () {
             Playdar.client.check_stat_timeout();
         }, Playdar.STAT_TIMEOUT);
@@ -178,6 +154,8 @@ Playdar.Client.prototype = {
         // Clear auth token
         this.auth_token = false;
         Playdar.Util.deletecookie(Playdar.AUTH_COOKIE_NAME);
+        // Stop resolving
+        this.cancel_resolve();
         // Callback
         this.listeners.onAuthClear();
         // Update status bar
@@ -194,8 +172,15 @@ Playdar.Client.prototype = {
     get_revoke_url: function () {
         return this.get_base_url("/authcodes", {
             revoke: this.auth_token,
-            jsonp: 'Playdar.Util.null_callback'
+            jsonp: 'Playdar.nop'
         });
+    },
+    get_stat_link_html: function (title) {
+        title = title || "Retry";
+        var html = '<a href="#"'
+            + ' onclick="Playdar.client.go(); return false;'
+            + '">' + title + '</a>';
+        return html;
     },
     get_auth_url: function () {
         return this.get_base_url("/auth_1/", Playdar.auth_details);
@@ -241,7 +226,7 @@ Playdar.Client.prototype = {
             this.auth_popup = null;
         }
         this.auth_token = token;
-        this.stat();
+        this.stat(true);
     },
     manual_auth_callback: function (input_id) {
         var input = document.getElementById(input_id);
@@ -341,6 +326,8 @@ Playdar.Client.prototype = {
     },
     cancel_resolve: function () {
         this.initialise_resolve();
+        // Callback
+        this.listeners.onCancelResolve();
         if (Playdar.status_bar) {
             Playdar.status_bar.cancel_resolve();
         }
@@ -514,7 +501,7 @@ Playdar.Scrobbler.prototype = {
     get_url: function (method, query_params) {
         query_params = query_params || {};
         query_params.call_id = new Date().getTime();
-        query_params.jsonp = query_params.jsonp || 'Playdar.Util.null_callback';
+        query_params.jsonp = query_params.jsonp || 'Playdar.nop';
         Playdar.client.add_auth_token(query_params);
         return Playdar.client.get_base_url("/audioscrobbler/" + method, query_params);
     },
@@ -1226,8 +1213,7 @@ Playdar.Util = {
         if (typeof console != 'undefined') {
             console.dir(response);
         }
-    },
-    null_callback: function () {}
+    }
 };
 
 // CONTENT PARSING

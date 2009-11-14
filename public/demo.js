@@ -13,20 +13,20 @@
         },
         onStat: function (status) {
             if (status) {
-                $('#stat').html('Playdar available » ' + Playdar.client.get_auth_link_html());
+                $('#stat').html('Playdar available • ' + Playdar.client.get_auth_link_html());
             } else {
-                $('#stat').html('Playdar unavailable » ' + Playdar.client.get_stat_link_html()).addClass('notFound');
+                $('#stat').html('Playdar unavailable • ' + Playdar.client.get_stat_link_html()).addClass('notFound');
             }
         },
         onAuth: function () {
-            $('#stat').html('Playdar connected » ' + Playdar.client.get_disconnect_link_html());
+            $('#stat').html('Playdar connected • ' + Playdar.client.get_disconnect_link_html());
             if (resolveOnAuth) {
                 resolveOnAuth = false;
                 resolveForm();
             }
         },
         onAuthClear: function () {
-            $('#stat').html('Playdar available » ' + Playdar.client.get_auth_link_html());
+            $('#stat').html('Playdar available • ' + Playdar.client.get_auth_link_html());
         },
         onResults: function (response, finalAnswer) {
             if (typeof(console) !== 'undefined') {

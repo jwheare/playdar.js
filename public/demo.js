@@ -18,19 +18,21 @@
             var row = $('#'+id);
             if (!row[0]) {
                 row = $('<li id='+id+'>').text(response.query.artist + ' - ' + response.query.track);
+                row.prepend('<span class="matches">');
                 $('#results').append(row);
             }
+            row.addClass('progress');
             row.append('.');
+            $('span.matches', row).text(response.results.length);
             if (finalAnswer) {
-                if (response.solved) {
-                    row.css('background', 'green');
+                if (response.results.length) {
+                    row.addClass('match');
                 } else {
-                    row.css('background', 'orange');
+                    row.addClass('noMatch');
                 }
-                if (!response.results.length) {
-                    row.css('background', 'red');
+                if (response.solved) {
+                    row.addClass('perfectMatch');
                 }
-                row.prepend('<span style="float:right;">'+response.results.length+'</span>');
                 console.dir(response);
             }
         }

@@ -3,4 +3,4 @@
 :source_files:
   - playdar.js
 :output_file: public/playdar.js
-:minify: true
+:minify: false

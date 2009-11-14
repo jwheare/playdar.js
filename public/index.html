@@ -8,27 +8,31 @@
         <link rel="stylesheet" href="/playdar.css">
     </head>
     <body>
-        <h1>Playdar.js</h1>
-        <p>Playdar.js is a JavaScript client library for interacting with the Playdar HTTP API.</p>
-        <p>Here’s how you can use it to query Playdar for a specific track:</p>
+        <h1 id="logo">Playdar.js</h1>
+        <p>Playdar.js is a JavaScript client library for interacting with the <a href="http://www.playdar.org/api.html">Playdar HTTP API</a>.</p>
+        <p>
+            Source code and full documentation: <a href="http://github.com/jwheare/playdar.js">Playdar.js on GitHub</a> | <a href="http://github.com/jwheare/playdar.js/issues">Issue tracker</a><br>
+            Download latest: <a href="/playdar.js">playdar.js</a>
+        </p>
+        <p>Here’s how you can use it to query Playdar for a specific track.</p>
         <form id="demo">
         <pre><code><span class="c">&lt;!-- Include the library --&gt;</span>
 <span class="t">&lt;script src="<span class="a">playdar.js</span>"&gt;&lt;/script&gt;</span>
 <span class="t">&lt;script&gt;</span>
-    <span class="c">/* First, setup your client callbacks. */</span>
+    <span class="c">/* First, set the client up with some callbacks. */</span>
     Playdar.<span class="m">setupClient</span>({
         
-        <span class="c">// This callback will be fired when the browser is authorised to query Playdar.</span>
+        <span class="c">// Called when the browser is authorised to query Playdar.</span>
         <span class="m">onAuth</span>: <span class="k">function</span> () {
             <span class="c">// At this point, we can query the Playdar API for a track and start polling for matches.</span>
-            Playdar.client.<span class="m">resolve</span>("<input name="artist" value="Weezer">", "<input name="track" value="Buddy Holly">");
+            Playdar.client.<span class="m">resolve</span>("<input name="artist" value="Mokele" onclick="this.focus(); this.select();">", "<input name="track" value="Hiding in your Insides!" onclick="this.focus(); this.select();">");
         },
         
-        <span class="c">// This callback will be fired in response to each poll, and gets passed the results so far.</span>
-        <span class="m">onResults</span>: <span class="k">function</span> (response, finalAnswer) {
+        <span class="c">// Called in response to each poll with the results so far.</span>
+        <span class="m">onResults</span>: <span class="k">function</span> (response, lastPoll) {
             console.<span class="m">log</span>('<span class="a">Polling </span>' + response.qid);
-            <span class="k">if</span> (finalAnswer) {
-                <span class="c">// We only care about the final response.</span>
+            <span class="k">if</span> (lastPoll) {
+                <span class="c">// Take a look at the final response.</span>
                 console.<span class="m">dir</span>(response);
             }
         }
@@ -40,7 +44,14 @@
 <span class="t">&lt;/script&gt;</span></code></pre>
     </form>
     
+    <p>Fill in the form values and press return or click the “go” button for a live demo. Results will appear below:</p>
     <ol id="results"></ol>
+    <p id="legend">
+        <span class="progress">In Progress</span>
+        <span class="noMatch">No Results</span>
+        <span class="match">Some Results</span>
+        <span class="perfectMatch">Perfect Match</span>
+    </p>
     
     <script src="/jquery.js"></script>
     <script src="/playdar.js"></script>

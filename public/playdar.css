@@ -1,16 +1,23 @@
 body {
     margin: 0;
-    padding: 0 15px;
+    padding: 0 15px 15px 15px;
     font: normal 15px 'Helvetica', sans-serif;
-    color: #E1E1E1;
-    background: #363A2B;
+    color: #e8f9bb;
+    background: #3B5536;
 }
 a img,
 img {
     border: 0;
 }
 a {
-    color: #86B2DE;
+    color: #9FDEFD;
+}
+
+h1#logo {
+    background: url('/img/playdar_icon_32x32.png') no-repeat 0 50%;
+    padding-left: 47px;
+    font-size: 32px;
+    color: #a8d840;
 }
 
 pre {
@@ -37,4 +44,35 @@ pre code span.k {
 }
 pre code span.m {
     color: #BDDEEA;
+}
+
+ol#results {
+    margin: 0;
+    padding: 0;
+    width: 51em;
+    list-style-position: inside;
+}
+ol#results li {
+    padding: 5px;
+}
+ol#results li span.matches {
+    float: right;
+}
+
+.progress {
+    background: #59814B;
+}
+.noMatch {
+    background: red;
+}
+.match {
+    background: orange;
+}
+.perfectMatch {
+    background: green;
+}
+
+p#legend span {
+    margin: 0 3px 0 0;
+    padding: 3px;
 }

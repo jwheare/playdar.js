@@ -1,24 +1,24 @@
-Playdar.js is a JavaScript client library for interacting with the [Playdar HTTP API](http://www.playdar.org/api.html)
+[Playdar.js](http://www.playdarjs.org/) is a JavaScript client library for interacting with the [Playdar HTTP API](http://www.playdar.org/api.html).
 
-Here's how you use it:
+Here’s how you can use it to query Playdar for a specific track:
 
     <!-- Include the library -->
     <script src="playdar.js"></script>
     <script>
-        /* First, setup your client callbacks. */
+        /* First, set the client up with some callbacks. */
         Playdar.setupClient({
             
-            // This callback will be fired when the browser is authorised to query Playdar.
+            // Called when the browser is authorised to query Playdar.
             onAuth: function () {
                 // At this point, we can query the Playdar API for a track and start polling for matches.
-                Playdar.client.resolve("Weezer", "Getchoo");
+                Playdar.client.resolve("Mokele", "Hiding in your Insides!");
             },
             
-            // This callback will be fired in response to each poll, and gets passed the results so far.
-            onResults: function (response, finalAnswer) {
+            // Called in response to each poll with the results so far.
+            onResults: function (response, lastPoll) {
                 console.log('Polling ' + response.qid);
-                if (finalAnswer) {
-                    // We only care about the final response.
+                if (lastPoll) {
+                    // Take a look at the final response.
                     console.dir(response);
                 }
             }
@@ -50,7 +50,7 @@ As seen above, querying Playdar for music is a two step process.
 1. Set the client up with an `onResults` callback.
 2. Call `Playdar.client.resolve`
 
-The `resolve` method queries the Playdar API and starts polling for results using the `get_results` API method. Here's the method signature:
+The `resolve` method queries the Playdar API and starts polling for results using the `get_results` API method. Here’s the method signature:
 
     /**
      * Playdar.client.resolve(artist, track[, album][, qid])
@@ -114,7 +114,7 @@ The Playdar library also has a built in wrapper for the [SoundManager 2 audio li
         Playdar.client.go();
     };
 
-Since SoundManager works via a flash object that's loaded asynchronously, you need to wait for the soundManager.onload event before calling `Playdar.client.go()`, or else you may end up calling SoundManager functions before it's ready.
+Since SoundManager works via a flash object that’s loaded asynchronously, you need to wait for the soundManager.onload event before calling `Playdar.client.go()`, or else you may end up calling SoundManager functions before it’s ready.
 
 You now have a couple of methods available for registering and playing Playdar streams:
 
@@ -135,7 +135,7 @@ You now have a couple of methods available for registering and playing Playdar s
     // Stop the current playing sound
     Playdar.player.stop_current();
     
-    // Stops a specific sound if it's now playing
+    // Stops a specific sound if it’s now playing
     Playdar.player.stop_stream(sid);
     
     // Whether any sound is playing at the moment

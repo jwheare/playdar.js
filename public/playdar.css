@@ -27,6 +27,10 @@ h1#logo {
     color: #a8d840;
 }
 
+h2 {
+    margin: 30px 0 15px 0;
+}
+
 pre {
     padding: 0.5em;
     background: #2E303A;
@@ -87,4 +91,15 @@ p#legend span {
 embed#sweep {
     float: right;
     display: none;
+}
+
+ul#featured {
+    margin: 0;
+    padding: 0;
+    list-style-type: square;
+    list-style-position: inside;
+    font-size: 17px;
+}
+ul#featured li {
+    margin: 0 0 5px 0;
 }

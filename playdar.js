@@ -499,48 +499,6 @@ Playdar.Client.prototype = {
     }
 };
 
-Playdar.Boffin = function () {
-    Playdar.boffin = this;
-};
-Playdar.Boffin.prototype = {
-    get_url: function (method, query_params) {
-        query_params = query_params || {};
-        query_params.call_id = new Date().getTime();
-        query_params.jsonp = query_params.jsonp || 'Playdar.Util.null_callback';
-        Playdar.client.add_auth_token(query_params);
-        return Playdar.client.get_base_url("/boffin/" + method, query_params);
-    },
-    get_tagcloud: function () {
-        // Update resolving progress status
-        if (Playdar.status_bar) {
-            Playdar.status_bar.increment_requests();
-        }
-        Playdar.client.resolutions_in_progress++;
-        Playdar.Util.loadjs(this.get_url("tagcloud", {
-            jsonp: 'Playdar.boffin.handle_tagcloud'
-        }));
-    },
-    handle_tagcloud: function (response) {
-        Playdar.client.register_results_handler(Playdar.client.listeners.onTagCloud, response.qid);
-        Playdar.client.get_results(response.qid);
-    },
-    get_tag_rql: function (tag) {
-        // Update resolving progress status
-        if (Playdar.status_bar) {
-            Playdar.status_bar.increment_requests();
-        }
-        Playdar.client.resolutions_in_progress++;
-        var rql = 'tag:"' + tag + '"';
-        Playdar.Util.loadjs(this.get_url("rql/" + encodeURIComponent(rql), {
-            jsonp: 'Playdar.boffin.handle_rql'
-        }));
-    },
-    handle_rql: function (response) {
-        Playdar.client.register_results_handler(Playdar.client.listeners.onRQL, response.qid);
-        Playdar.client.get_results(response.qid);
-    }
-};
-
 Playdar.Scrobbler = function () {
     Playdar.scrobbler = this;
 };

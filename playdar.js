@@ -117,21 +117,25 @@ Playdar.Client.prototype = {
     },
     
     stat: function (postAuth) {
+        this.statResponse = null;
         if (!postAuth) {
             this.listeners.onStartStat();
         }
         setTimeout(function () {
-            Playdar.client.checkStatTimeout();
+            Playdar.client.onStatTimeout();
         }, Playdar.STAT_TIMEOUT);
         Playdar.Util.loadJs(this.getUrl("stat", "handleStat"));
     },
-    checkStatTimeout: function () {
-        if (!this.stat_response || this.stat_response.name != "playdar") {
+    isAvailable: function () {
+        return this.statResponse && this.statResponse.name == "playdar";
+    },
+    onStatTimeout: function () {
+        if (!this.isAvailable()) {
             this.listeners.onStat(false);
         }
     },
     handleStat: function (response) {
-        this.stat_response = response;
+        this.statResponse = response;
         // Update status bar
         if (Playdar.USE_STATUS_BAR) {
             new Playdar.StatusBar();
@@ -159,6 +163,8 @@ Playdar.Client.prototype = {
         Playdar.Util.deleteCookie(Playdar.AUTH_COOKIE_NAME);
         // Stop resolving
         this.cancel_resolve();
+        // Stat again
+        this.stat();
         // Callback
         this.listeners.onAuthClear();
         // Update status bar

@@ -9,10 +9,12 @@
     }
     Playdar.setupClient({
         onStartStat: function () {
+            $('#demoSubmit').attr('disabled', true);
             $('#stat').html('Scanning for Playdar…').removeClass('notFound');
         },
         onStat: function (status) {
             if (status) {
+                $('#demoSubmit').attr('disabled', false);
                 $('#stat').html('Playdar available • ' + Playdar.client.get_auth_link_html());
             } else {
                 $('#stat').html('Playdar unavailable • ' + Playdar.client.get_stat_link_html()).addClass('notFound');
@@ -24,9 +26,6 @@
                 resolveOnAuth = false;
                 resolveForm();
             }
-        },
-        onAuthClear: function () {
-            $('#stat').html('Playdar available • ' + Playdar.client.get_auth_link_html());
         },
         onResults: function (response, finalAnswer) {
             if (typeof(console) !== 'undefined') {
@@ -65,11 +64,13 @@
     
     $('#demo').submit(function (e) {
         e.preventDefault();
-        if (Playdar.client.is_authed()) {
-            resolveForm();
-        } else {
-            resolveOnAuth = true;
-            Playdar.client.start_auth();
+        if (Playdar.client.isAvailable()) {
+            if (Playdar.client.is_authed()) {
+                resolveForm();
+            } else {
+                resolveOnAuth = true;
+                Playdar.client.start_auth();
+            }
         }
     });
 })();

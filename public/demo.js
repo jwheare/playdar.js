@@ -37,7 +37,7 @@
                 }
                 $('#stat').html('Playdar available • ' + Playdar.client.get_auth_link_html());
             } else {
-                $('#stat').html('Playdar unavailable • ' + Playdar.client.get_stat_link_html()).addClass('notFound');
+                $('#stat').html('<a href="http://www.playdar.org/">Playdar</a> unavailable • ' + Playdar.client.get_stat_link_html()).addClass('notFound');
             }
         },
         onAuth: function () {

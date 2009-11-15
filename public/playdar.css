@@ -58,6 +58,10 @@ pre code span.m {
     color: #BDDEEA;
 }
 
+#demoResults {
+    display: none;
+}
+
 ol#results {
     margin: 0;
     padding: 0;

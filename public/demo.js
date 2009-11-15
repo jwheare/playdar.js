@@ -7,6 +7,22 @@
         $('#sweep').show();
         Playdar.client.resolve($('#demo input[name=artist]').val(), $('#demo input[name=track]').val());
     }
+    function enableLiveDemo () {
+        // Replace artist with input
+        var artist = $('<input name="artist" onclick="this.focus(); this.select();">')
+            .val($('#demoArtist').text());
+        $('#demoArtist').replaceWith(artist);
+        // Replace track with input
+        var track = $('<input name="track" onclick="this.focus(); this.select();">')
+            .val($('#demoTrack').text());
+        $('#demoTrack').replaceWith(track);
+        // Replace go with submit
+        var go = $('<input type="submit" id="demoSubmit">')
+            .val($('#demoGo').text());
+        $('#demoGo').replaceWith(go);
+        // Show results
+        $('#demoResults').show();
+    }
     Playdar.setupClient({
         onStartStat: function () {
             $('#demoSubmit').attr('disabled', true);
@@ -14,7 +30,11 @@
         },
         onStat: function (status) {
             if (status) {
-                $('#demoSubmit').attr('disabled', false);
+                if ($('#demoSubmit')[0]) {
+                    $('#demoSubmit').attr('disabled', false);
+                } else {
+                    enableLiveDemo();
+                }
                 $('#stat').html('Playdar available • ' + Playdar.client.get_auth_link_html());
             } else {
                 $('#stat').html('Playdar unavailable • ' + Playdar.client.get_stat_link_html()).addClass('notFound');

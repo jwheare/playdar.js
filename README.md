@@ -55,11 +55,12 @@ As seen above, querying Playdar for music is a two step process.
 The `resolve` method queries the Playdar API and starts polling for results using the `get_results` API method. Here’s the method signature:
 
     /**
-     * Playdar.client.resolve(artist, track[, album][, qid])
+     * Playdar.client.resolve(artist, track[, album][, qid][, results])
      * - artist (String): Track artist
      * - track (String): Track title
      * - album (String): Track album. This will only be used for sorting results
      * - qid (UUID): ID to use for this query
+     * - results (Array): An array of result objects to seed the response set with
     **/
 
 The `onResults` callback is fired in response to each poll, and is passed two arguments:

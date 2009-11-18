@@ -281,15 +281,16 @@ Playdar.Client.prototype = {
     
     // CONTENT RESOLUTION
     /**
-     * Playdar.client.resolve(artist, track[, album][, qid])
+     * Playdar.client.resolve(artist, track[, album][, qid][, results])
      * - artist (String): Track artist
      * - track (String): Track title
      * - album (String): Track album. This will only be used for sorting results
      * - qid (UUID): ID to use for this query
+     * - results (Array): An array of result objects to seed the response set with
      * 
      * Queries the Playdar API by first calling the `resolve` method then initiates polling of `get_results`
     **/    
-    resolve: function (artist, track, album, qid, url) {
+    resolve: function (artist, track, album, qid, results) {
         if (!this.is_authed()) {
             return false;
         }
@@ -297,9 +298,11 @@ Playdar.Client.prototype = {
             artist: artist || '',
             album: album || '',
             track: track || '',
-            url: url || '',
             qid: qid || Playdar.Util.generate_uuid()
         };
+        if (results) {
+            query.results = results;
+        }
         // List player's supported mimetypes
         if (Playdar.player) {
             query.mimetypes = Playdar.player.getMimeTypes().join(',');
@@ -1022,15 +1025,13 @@ Playdar.Util = {
     toQueryString: function (params) {
         var results = [];
         for (var key in params) {
-            var values = params[key];
+            var value = params[key];
             key = encodeURIComponent(key);
             
-            if (Object.prototype.toString.call(values) == '[object Array]') {
-                for (var i = 0; i < values.length; i++) {
-                    results.push(Playdar.Util.toQueryPair(key, values[i]));
-                }
+            if (typeof(value) == 'object') {
+                results.push(Playdar.Util.toQueryPair(key, JSON.stringify(value)));
             } else {
-                results.push(Playdar.Util.toQueryPair(key, values));
+                results.push(Playdar.Util.toQueryPair(key, value));
             }
         }
         return results.join('&');

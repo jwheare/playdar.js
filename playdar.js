@@ -298,11 +298,9 @@ Playdar.Client.prototype = {
             artist: artist || '',
             album: album || '',
             track: track || '',
-            qid: qid || Playdar.Util.generate_uuid()
+            qid: qid || Playdar.Util.generate_uuid(),
+            results: results
         };
-        if (results) {
-            query.results = results;
-        }
         // List player's supported mimetypes
         if (Playdar.player) {
             query.mimetypes = Playdar.player.getMimeTypes().join(',');

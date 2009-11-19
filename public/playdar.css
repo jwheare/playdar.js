@@ -16,6 +16,7 @@ a {
 
 span#stat {
     float: right;
+    text-align: right;
 }
 span#stat.notFound {
     color: orange;

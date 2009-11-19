@@ -22,6 +22,7 @@
         $('#demoGo').replaceWith(go);
         // Show results
         $('#demoResults').show();
+        $('#download').hide();
     }
     Playdar.setupClient({
         onStartStat: function () {
@@ -37,7 +38,11 @@
                 }
                 $('#stat').html('Playdar available • ' + Playdar.client.get_auth_link_html());
             } else {
-                $('#stat').html('<a href="http://www.playdar.org/">Playdar</a> unavailable • ' + Playdar.client.get_stat_link_html()).addClass('notFound');
+                $('#stat').html('Playdar unavailable • '
+                    + '<a href="http://www.playdar.org/download/">Download</a>'
+                    + '<br>'
+                    + Playdar.client.get_stat_link_html()
+                ).addClass('notFound');
             }
         },
         onAuth: function () {

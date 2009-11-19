@@ -1,7 +1,4 @@
 (function () {
-    Playdar.auth_details.receiverurl = Playdar.Util.location_from_url("/playdar_auth.html").href;
-    Playdar.USE_STATUS_BAR = false;
-    
     Playdar.setupClient({
         onStartStat: function () {
             $('#demoSubmit').attr('disabled', true);
@@ -81,6 +78,9 @@
             debugMode: false
         }
     );
+    
+    Playdar.USE_STATUS_BAR = false;
+    Playdar.auth_details.receiverurl = Playdar.Util.location_from_url("/playdar_auth.html").href;
     
     $('#demo').submit(function (e) {
         e.preventDefault();

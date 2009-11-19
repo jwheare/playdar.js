@@ -1,4 +1,4 @@
-Playdar.Player = function (soundmanager, url, options) {
+Playdar.Player = function (soundmanager, url, onready, options) {
     // Merge in defaults
     options = options || {};
     options.url = url;
@@ -14,6 +14,7 @@ Playdar.Player = function (soundmanager, url, options) {
     for (var k in options) {
         this.soundmanager[k] = options[k];
     }
+    this.soundmanager.onready(onready);
 };
 
 Playdar.Player.DefaultOptions = {

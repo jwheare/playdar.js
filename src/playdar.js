@@ -34,8 +34,8 @@ Playdar = {
     setupClient: function (listeners) {
         new Playdar.Client(listeners);
     },
-    setupPlayer: function (soundmanager, url, options) {
-        new Playdar.Player(soundmanager, url, options);
+    setupPlayer: function (soundmanager, url, onready, options) {
+        new Playdar.Player(soundmanager, url, onready, options);
     },
     unload: function () {
         if (Playdar.player) {

@@ -1,29 +1,7 @@
 (function () {
-    $('#latestVersion').text('(v'+Playdar.VERSION+')');
-    var resolveOnAuth = false;
     Playdar.auth_details.receiverurl = Playdar.Util.location_from_url("/playdar_auth.html").href;
     Playdar.USE_STATUS_BAR = false;
-    function resolveForm () {
-        $('#sweep').show();
-        Playdar.client.resolve($('#demo input[name=artist]').val(), $('#demo input[name=track]').val());
-    }
-    function enableLiveDemo () {
-        // Replace artist with input
-        var artist = $('<input name="artist" onclick="this.focus(); this.select();">')
-            .val($('#demoArtist').text());
-        $('#demoArtist').replaceWith(artist);
-        // Replace track with input
-        var track = $('<input name="track" onclick="this.focus(); this.select();">')
-            .val($('#demoTrack').text());
-        $('#demoTrack').replaceWith(track);
-        // Replace go with submit
-        var go = $('<input type="submit" id="demoSubmit">')
-            .val($('#demoGo').text());
-        $('#demoGo').replaceWith(go);
-        // Show results
-        $('#demoResults').show();
-        $('#download').hide();
-    }
+    
     Playdar.setupClient({
         onStartStat: function () {
             $('#demoSubmit').attr('disabled', true);
@@ -89,16 +67,20 @@
         }
     });
     
-    Playdar.setupPlayer(soundManager, '/sm2/swf/soundmanager2_flash9.swf', {
-        debugMode: false
-    });
-    Playdar.player.soundmanager.onready(function (status) {
-        if (status.success) {
-            Playdar.client.go();
-        } else {
-            $('#stat').html('Problem loading Flash player').addClass('error');
+    Playdar.setupPlayer(
+        soundManager,
+        '/sm2/swf/soundmanager2_flash9.swf',
+        function onready (status) {
+            if (status.success) {
+                Playdar.client.go();
+            } else {
+                $('#stat').html('Problem loading Flash player').addClass('error');
+            }
+        },
+        {
+            debugMode: false
         }
-    });
+    );
     
     $('#demo').submit(function (e) {
         e.preventDefault();
@@ -111,4 +93,30 @@
             }
         }
     });
+    
+    var resolveOnAuth = false;
+    
+    function resolveForm () {
+        $('#sweep').show();
+        Playdar.client.resolve($('#demo input[name=artist]').val(), $('#demo input[name=track]').val());
+    }
+    function enableLiveDemo () {
+        // Replace artist with input
+        var artist = $('<input name="artist" onclick="this.focus(); this.select();">')
+            .val($('#demoArtist').text());
+        $('#demoArtist').replaceWith(artist);
+        // Replace track with input
+        var track = $('<input name="track" onclick="this.focus(); this.select();">')
+            .val($('#demoTrack').text());
+        $('#demoTrack').replaceWith(track);
+        // Replace go with submit
+        var go = $('<input type="submit" id="demoSubmit">')
+            .val($('#demoGo').text());
+        $('#demoGo').replaceWith(go);
+        // Show results
+        $('#demoResults').show();
+        $('#download').hide();
+    }
+    
+    $('#latestVersion').text('(v'+Playdar.VERSION+')');
 })();

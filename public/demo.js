@@ -27,7 +27,7 @@
     Playdar.setupClient({
         onStartStat: function () {
             $('#demoSubmit').attr('disabled', true);
-            $('#stat').html('Scanning for Playdar…').removeClass('notFound');
+            $('#stat').html('Scanning for Playdar…').removeClass('error');
         },
         onStat: function (status) {
             if (status) {
@@ -42,7 +42,7 @@
                     + '<a href="http://www.playdar.org/download/">Download</a>'
                     + '<br>'
                     + Playdar.client.get_stat_link_html()
-                ).addClass('notFound');
+                ).addClass('error');
             }
         },
         onAuth: function () {
@@ -68,6 +68,10 @@
             $('span.matches', row).text(response.results.length);
             if (finalAnswer) {
                 if (response.results.length) {
+                    Playdar.player.register_stream(response.results[0]);
+                    row.click(function (e) {
+                        Playdar.player.play_stream(response.results[0].sid);
+                    });
                     row.addClass('match');
                 } else {
                     row.addClass('noMatch');
@@ -85,7 +89,16 @@
         }
     });
     
-    Playdar.client.go();
+    Playdar.setupPlayer(soundManager, '/sm2/swf/soundmanager2_flash9.swf', {
+        debugMode: false
+    });
+    Playdar.player.soundmanager.onready(function (status) {
+        if (status.success) {
+            Playdar.client.go();
+        } else {
+            $('#stat').html('Problem loading Flash player').addClass('error');
+        }
+    });
     
     $('#demo').submit(function (e) {
         e.preventDefault();

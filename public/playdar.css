@@ -18,7 +18,7 @@ span#stat {
     float: right;
     text-align: right;
 }
-span#stat.notFound {
+span#stat.error {
     color: orange;
 }
 
@@ -84,6 +84,9 @@ ol#results li span.matches {
 }
 .match {
     background: #D48200;
+}
+.match:hover {
+    cursor: pointer;
 }
 .perfectMatch {
     background: green;

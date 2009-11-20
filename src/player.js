@@ -14,7 +14,9 @@ Playdar.Player = function (soundmanager, url, onready, options) {
     for (var k in options) {
         this.soundmanager[k] = options[k];
     }
-    this.soundmanager.onready(onready);
+    if (onready) {
+        this.soundmanager.onready(onready);
+    }
 };
 
 Playdar.Player.DefaultOptions = {

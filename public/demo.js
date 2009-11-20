@@ -64,6 +64,21 @@
         }
     });
     
+    Playdar.setupPlayer(
+        soundManager,
+        '/sm2/swf/soundmanager2_flash9.swf',
+        function onready (status) {
+            if (status.success) {
+                Playdar.client.go();
+            } else {
+                $('#stat').html('Problem loading Flash player').addClass('error');
+            }
+        },
+        {
+            debugMode: false
+        }
+    );
+    
     Playdar.USE_STATUS_BAR = false;
     Playdar.auth_details.receiverurl = Playdar.Util.location_from_url("/playdar_auth.html").href;
     

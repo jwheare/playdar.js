@@ -28,18 +28,7 @@
             }
         },
         onResults: function (response, finalAnswer) {
-            if (typeof(console) !== 'undefined') {
-                console.log('Polling ' + response.qid);
-            }
-            var id = 'results_qid_' + response.qid;
-            var row = $('#'+id);
-            if (!row[0]) {
-                row = $('<li id='+id+'>').text(response.query.artist + ' - ' + response.query.track);
-                row.prepend('<span class="matches">');
-                $('#results').append(row);
-            }
-            row.addClass('progress');
-            row.append('.');
+            var row = buildResultRow(response.qid, response.query.artist, response.query.track);
             $('span.matches', row).text(response.results.length);
             if (finalAnswer) {
                 if (response.results.length) {
@@ -96,9 +85,23 @@
     
     var resolveOnAuth = false;
     
+    function buildResultRow (qid, artist, track) {
+        var id = 'results_qid_' + qid;
+        var row = $('#'+id);
+        if (!row[0]) {
+            row = $('<li id='+id+'>').text(artist + ' - ' + track)
+                .prepend('<span class="matches">')
+                .addClass('progress');
+            $('#results').append(row);
+        }
+        return row;
+    }
     function resolveForm () {
         $('#sweep').show();
-        Playdar.client.resolve($('#demo input[name=artist]').val(), $('#demo input[name=track]').val());
+        var artist = $('#demo input[name=artist]').val();
+        var track = $('#demo input[name=track]').val();
+        var qid = Playdar.client.resolve(artist, track);
+        buildResultRow(qid, artist, track);
     }
     function enableLiveDemo () {
         // Replace artist with input

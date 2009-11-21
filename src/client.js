@@ -233,11 +233,12 @@ Playdar.Client.prototype = {
         if (!this.is_authed()) {
             return false;
         }
+        qid = qid || Playdar.Util.generate_uuid();
         var query = {
             artist: artist || '',
             album: album || '',
             track: track || '',
-            qid: qid || Playdar.Util.generate_uuid(),
+            qid: qid,
             results: results
         };
         // List player's supported mimetypes
@@ -251,6 +252,7 @@ Playdar.Client.prototype = {
         
         this.resolutionQueue.push(query);
         this.processResolutionQueue();
+        return qid;
     },
     processResolutionQueue: function() {
         if (this.resolutionsInProgress.count >= Playdar.MAX_CONCURRENT_RESOLUTIONS) {
@@ -310,15 +312,30 @@ Playdar.Client.prototype = {
     getResults: function (qid) {
         // Check resolving hasn't been cancelled
         if (this.resolutionsInProgress.queries[qid]) {
-            if (!this.pollCounts[qid]) {
-                this.pollCounts[qid] = 0;
+            // Use the long response method instead of polling for daemons that support it
+            if (this.statResponse.version != '0.1.0') {
+                return this.getResultsLong(qid);
+            } else {
+                return this.getResultsPoll(qid);
             }
-            this.pollCounts[qid]++;
-            Playdar.Util.loadJs(this.getUrl("get_results", "handleResults", {
-                qid: qid,
-                poll: this.pollCounts[qid]
-            }));
         }
+    },
+    // Start polling for results for a query id
+    getResultsPoll: function (qid) {
+        if (!this.pollCounts[qid]) {
+            this.pollCounts[qid] = 0;
+        }
+        this.pollCounts[qid]++;
+        Playdar.Util.loadJs(this.getUrl("get_results", "handleResults", {
+            qid: qid,
+            poll: this.pollCounts[qid]
+        }));
+    },
+    // Get long response results for a query id
+    getResultsLong: function (qid) {
+        Playdar.Util.loadJs(this.getUrl("get_results_long", "handleResultsLong", {
+            qid: qid
+        }));
     },
     pollResults: function (response, callback, scope) {
         // figure out if we should re-poll, or if the query is solved/failed:
@@ -369,6 +386,26 @@ Playdar.Client.prototype = {
                 this.resolutionsInProgress.count--;
                 this.processResolutionQueue();
             }
+        }
+    },
+    handleResultsLong: function (response) {
+        // Check resolving hasn't been cancelled
+        if (this.resolutionsInProgress.queries[response.qid]) {
+            // Status bar handler
+            if (Playdar.statusBar) {
+                Playdar.statusBar.handleResults(response, true);
+            }
+            if (this.resultsCallbacks[response.qid]) {
+                // try a custom handler registered for this query id
+                this.resultsCallbacks[response.qid](response, true);
+            } else {
+                // fall back to standard handler
+                this.listeners.onResults(response, true);
+            }
+            // Check to see if we can make some more resolve calls
+            delete this.resolutionsInProgress.queries[response.qid];
+            this.resolutionsInProgress.count--;
+            this.processResolutionQueue();
         }
     },
     get_last_results: function () {

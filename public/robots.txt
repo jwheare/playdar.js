@@ -1,0 +1,2 @@
+User-Agent: *
+Disallow: playdar_auth.html

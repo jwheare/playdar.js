@@ -17,27 +17,7 @@ Playdar.setupClient({
     }
 });
 
-/* Soundmanager options */
-soundManager.waitForWindowLoad = true;
-soundManager.url = '/sm2/swf/soundmanager2_flash9_xdomain.swf';
-
-// Enable flash 9 features, like mpeg4 support
-soundManager.flashVersion = 9;
-soundManager.useMovieStar = true;
-
-// Debug settings
-soundManager.consoleOnly = true;
-soundManager.debugMode = false;
-
-// Set an infinite timeout to allow for flashblockers
-soundManager.flashLoadTimeout = 0;
-
-soundManager.onready(function (status) {
-    if (status.success) {
-        Playdar.setupPlayer(soundManager);
-        Playdar.client.go();
-    }
-});
+Playdar.client.go();
 
 function testBuy (expected, actual, label) {
     if (expected) {

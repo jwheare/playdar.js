@@ -7,7 +7,7 @@
  * http://www.playdarjs.org/LICENSE
  */
 Playdar = {
-    VERSION: "0.5.2",
+    VERSION: "0.5.3",
     SERVER_ROOT: "localhost",
     SERVER_PORT: "60210",
     STATIC_HOST: "http://www.playdar.org",
@@ -34,6 +34,7 @@ Playdar = {
     setupClient: function (listeners) {
         new Playdar.Client(listeners);
     },
+    // Deprecated
     setupPlayer: function (soundmanager, url, onready, options) {
         new Playdar.SM2Player(soundmanager, url, onready, options);
     },

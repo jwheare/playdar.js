@@ -222,6 +222,15 @@ Playdar.Util = {
         return location;
     },
     
+    sleep: function (ms, breakCondition) {
+        var start = (new Date()).getTime();
+        while (((new Date()).getTime() - start) < ms) {
+            if (breakCondition && breakCondition()) {
+                break;
+            }
+        }
+    },
+    
     log: function (response) {
         if (typeof console != 'undefined') {
             console.dir(response);

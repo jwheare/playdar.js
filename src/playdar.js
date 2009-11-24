@@ -42,7 +42,9 @@ Playdar = {
         if (Playdar.player) {
             var sound = Playdar.player.getNowPlaying();
             if (sound && sound.playState == 1) {
-                e.returnValue = "The music will stop if you leave this page.";
+                var confirmation = "The music will stop if you leave this page.";
+                e.returnValue = confirmation;
+                return confirmation;
             }
         }
     },

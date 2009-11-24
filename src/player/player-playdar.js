@@ -84,8 +84,8 @@ Playdar.PlaydarPlayer.prototype = {
             setPosition: function (position) {
                 player.setPosition(result.sid, position);
             },
-            stop: function () {
-                player.stop(result.sid);
+            stop: function (onUnload) {
+                player.stop(result.sid, onUnload);
             },
             unload: Playdar.nop,
             chained: false // TODO, allow options to override. Figure out options/callbacks
@@ -121,7 +121,7 @@ Playdar.PlaydarPlayer.prototype = {
         }
         var sound = this.getNowPlaying();
         if (sound) {
-            sound.stop();
+            sound.stop(hard);
         }
     },
     stop_stream: function (sid) {
@@ -168,14 +168,24 @@ Playdar.PlaydarPlayer.prototype = {
     stopCallback: function (status) {
         this.nowplayingid = null;
     },
-    stop: function (sid) {
-        Playdar.Util.loadJs(this.getUrl('stop', {
-            jsonp: 'Playdar.player.stopCallback'
-        }));
-        this.sounds[sid].playState = 0;
-        Playdar.Util.sleep(200, function () {
-            return this.nowplayingid == null;
-        });
+    stop: function (sid, onUnload) {
+        if (onUnload) {
+            var stopper = window.open();
+            var stopUrl = this.getUrl('stop', {
+                jsonp: "function Playdar_close (json) { window.close() } Playdar_close"
+            });
+            stopper.document.write('<html>'
+                + '<body>'
+                + '<script src="' + stopUrl + '"></script>'
+                + '</body>'
+                + '</html>'
+            );
+        } else {
+            Playdar.Util.loadJs(this.getUrl('stop', {
+                jsonp: 'Playdar.player.stopCallback'
+            }));
+            this.sounds[sid].playState = 0;
+        }
     },
     togglePause: function (sid) {
         if (this.sounds[sid].readyState == 0) {

@@ -35,15 +35,20 @@ Playdar = {
         new Playdar.Client(listeners);
     },
     setupPlayer: function (soundmanager, url, onready, options) {
-        new Playdar.Player(soundmanager, url, onready, options);
+        new Playdar.SM2Player(soundmanager, url, onready, options);
     },
-    unload: function () {
+    beforeunload: function (e) {
+        if (Playdar.player && Playdar.player.is_now_playing()) {
+            e.returnValue = "The music will stop if you leave this page";
+        }
+    },
+    unload: function (e) {
         if (Playdar.player) {
             // Stop the music
             Playdar.player.stop_current(true);
         } else if (Playdar.scrobbler) {
             // Stop scrobbling
-            Playdar.scrobbler.stop();
+            Playdar.scrobbler.stop(true);
         }
     }
 };
@@ -68,4 +73,5 @@ Playdar.DefaultListeners = {
 //= require "json2.js"
 //= require "sizzle.js"
 
-Playdar.Util.addEvent(window, 'beforeunload', Playdar.unload);
+Playdar.Util.addEvent(window, 'beforeunload', Playdar.beforeunload);
+Playdar.Util.addEvent(window, 'unload', Playdar.unload);

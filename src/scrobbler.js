@@ -30,8 +30,19 @@ Playdar.Scrobbler.prototype = {
         }
         Playdar.Util.loadJs(this.getUrl("start", query_params));
     },
-    stop: function () {
-        Playdar.Util.loadJs(this.getUrl("stop"));
+    stopCallback: function () {
+        this.stopping = false;
+    },
+    stop: function (sleep) {
+        this.stopping = true;
+        Playdar.Util.loadJs(this.getUrl("stop"), {
+            jsonp: Playdar.scrobbler.stopCallback
+        });
+        if (sleep) {
+            Playdar.Util.sleep(100, function () {
+                return Playdar.scrobbler.stopping == false;
+            });
+        }
     },
     pause: function () {
         Playdar.Util.loadJs(this.getUrl("pause"));

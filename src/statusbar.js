@@ -238,16 +238,16 @@ Playdar.StatusBar.prototype = {
         };
     },
     
-    playHandler: function (stream) {
+    playHandler: function (result) {
         // Initialise the track progress
         this.trackElapsed.innerHTML = Playdar.Util.mmss(0);
         // Update the track link
-        this.trackLink.href = Playdar.client.get_stream_url(stream.sid);
-        this.trackLink.title = stream.source;
-        this.trackName.innerHTML = stream.track;
-        this.artistName.innerHTML = stream.artist;
+        this.trackLink.href = Playdar.client.get_stream_url(result.sid);
+        this.trackLink.title = result.source;
+        this.trackName.innerHTML = result.track;
+        this.artistName.innerHTML = result.artist;
         // Update the track duration
-        this.trackDuration.innerHTML = Playdar.Util.mmss(stream.duration);
+        this.trackDuration.innerHTML = Playdar.Util.mmss(result.duration);
         // Show progress bar
         this.status.style.display = "none";
         this.playback.style.display = "";

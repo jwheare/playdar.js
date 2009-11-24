@@ -60,10 +60,21 @@ Playdar.Util = {
     },
     
     // JSON loader
-    loadJs: function (url) {
+    loadJs: function (url, checkForGlobal, onLoad) {
        var s = document.createElement("script");
        s.src = url;
        document.getElementsByTagName("head")[0].appendChild(s);
+       if (checkForGlobal) {
+           Playdar.Util.pollForGlobal(checkForGlobal, onLoad);
+       }
+    },
+    pollForGlobal: function (globalObject, onLoad) {
+       setTimeout(function () {
+           if (window[globalObject]) {
+               return onLoad(window[globalObject]);
+           }
+           Playdar.Util.pollForGlobal(globalObject, onLoad);
+       });
     },
     
     // Cookie helpers

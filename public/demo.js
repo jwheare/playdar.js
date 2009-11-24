@@ -53,8 +53,8 @@
         }
     });
     
-    Playdar.setupPlayer(
-        soundManager,
+    new Playdar.SM2Player(
+        '/sm2/script/soundmanager2-nodebug-jsmin.js',
         '/sm2/swf/soundmanager2_flash9.swf',
         function onready (status) {
             if (status.success) {

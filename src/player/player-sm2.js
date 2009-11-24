@@ -1,21 +1,16 @@
-Playdar.SM2Player = function (soundmanager, url, onready, options) {
+Playdar.SM2Player = function (soundmanager, swfUrl, onready, options) {
     Playdar.player = this;
     
     this.results = {};
     this.nowplayingid = null;
-    // Merge in defaults
-    options = options || {};
-    options.url = url;
-    for (var k in Playdar.SM2Player.DefaultOptions) {
-        options[k] = options[k] || Playdar.SM2Player.DefaultOptions[k];
-    }
-    this.soundmanager = soundmanager;
-    // Set soundManager options
-    for (var k in options) {
-        this.soundmanager[k] = options[k];
-    }
-    if (onready) {
-        this.soundmanager.onready(onready);
+    
+    // soundmanager can be a jsUrl or the soundManager global
+    if (typeof soundmanager == 'string') {
+        Playdar.Util.loadJs(soundmanager, 'soundManager', function (soundmanager) {
+            Playdar.player.setupSoundmanager(soundmanager, swfUrl, onready, options);
+        });
+    } else {
+        Playdar.player.setupSoundmanager(soundmanager, swfUrl, onready, options);
     }
 };
 
@@ -49,6 +44,22 @@ Playdar.SM2Player.MIMETYPES = {
     "audio/3g2": true
 };
 Playdar.SM2Player.prototype = {
+    setupSoundmanager: function (soundmanager, swfUrl, onready, options) {
+        // Merge in defaults
+        options = options || {};
+        options.url = swfUrl;
+        for (var k in Playdar.SM2Player.DefaultOptions) {
+            options[k] = options[k] || Playdar.SM2Player.DefaultOptions[k];
+        }
+        this.soundmanager = soundmanager;
+        // Set soundManager options
+        for (var k in options) {
+            this.soundmanager[k] = options[k];
+        }
+        if (onready) {
+            this.soundmanager.onready(onready);
+        }
+    },
     getMimeTypes: function () {
         var mime_types = [];
         for (var type in Playdar.SM2Player.MIMETYPES) {

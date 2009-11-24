@@ -119,11 +119,9 @@ Playdar.PlaydarPlayer.prototype = {
         if (Playdar.statusBar) {
             Playdar.statusBar.stopCurrent();
         }
-        if (this.nowplayingid) {
-            var sound = this.sounds[this.nowplayingid];
-            if (sound.playState == 1) {
-                sound.stop();
-            }
+        var sound = this.getNowPlaying();
+        if (sound) {
+            sound.stop();
         }
     },
     stop_stream: function (sid) {
@@ -139,8 +137,13 @@ Playdar.PlaydarPlayer.prototype = {
         }
         return false;
     },
-    toggle_nowplaying: function () {
+    getNowPlaying: function () {
         if (this.nowplayingid) {
+            return this.sounds[this.nowplayingid];
+        }
+    },
+    toggle_nowplaying: function () {
+        if (this.is_now_playing()) {
             this.play_stream(this.nowplayingid);
         }
     },
@@ -170,7 +173,7 @@ Playdar.PlaydarPlayer.prototype = {
             jsonp: 'Playdar.player.stopCallback'
         }));
         this.sounds[sid].playState = 0;
-        Playdar.Util.sleep(100, function () {
+        Playdar.Util.sleep(200, function () {
             return this.nowplayingid == null;
         });
     },
@@ -188,7 +191,7 @@ Playdar.PlaydarPlayer.prototype = {
     setPosition: function (sid, position) {
         // no method
     },
-    getNowPlaying: function () {
+    getNowPlayingSid: function () {
         Playdar.Util.loadJs(this.getUrl('np'));
     }
 };

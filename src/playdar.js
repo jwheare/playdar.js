@@ -38,8 +38,11 @@ Playdar = {
         new Playdar.SM2Player(soundmanager, url, onready, options);
     },
     beforeunload: function (e) {
-        if (Playdar.player && Playdar.player.is_now_playing()) {
-            e.returnValue = "The music will stop if you leave this page";
+        if (Playdar.player) {
+            var sound = Playdar.player.getNowPlaying();
+            if (sound && sound.playState == 1) {
+                e.returnValue = "The music will stop if you leave this page.";
+            }
         }
     },
     unload: function (e) {

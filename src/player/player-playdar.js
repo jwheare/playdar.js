@@ -27,6 +27,7 @@ Playdar.PlaydarPlayer.BaseCallbacks = {
     onplay: Playdar.nop,
     onpause: Playdar.nop,
     onresume: Playdar.nop,
+    onstop: Playdar.nop,
     onfinish: Playdar.nop,
     whileloading: Playdar.nop,
     whileplaying: Playdar.nop
@@ -60,6 +61,7 @@ Playdar.PlaydarPlayer.prototype = {
         var player = this;
         // Register sound
         var sound = {
+            sID: result.sid,
             result: result,
             callbacks: callbacks,
             playState: 0,
@@ -158,14 +160,26 @@ Playdar.PlaydarPlayer.prototype = {
     },
     
     // TODO add callback and return value handling
+    playCallback: function (json) {
+        var sound = this.getNowPlaying();
+        if (json.response == 'ok') {
+            sound.callbacks.onplay.call(sound);
+        } else {
+            sound.readyState = 2;
+        }
+        sound.callbacks.onload.call(sound);
+    },
     play: function (sid) {
         Playdar.Util.loadJs(this.getUrl('play', {
-            sid: sid
+            sid: sid,
+            jsonp: 'Playdar.player.playCallback'
         }));
         this.sounds[sid].playState = 1;
         this.sounds[sid].readyState = 3;
     },
     stopCallback: function (status) {
+        var sound = this.getNowPlaying();
+        sound.callbacks.onstop.call(sound);
         this.nowplayingid = null;
     },
     stop: function (sid, onUnload) {
@@ -187,11 +201,21 @@ Playdar.PlaydarPlayer.prototype = {
             this.sounds[sid].playState = 0;
         }
     },
+    togglePauseCallback: function (json) {
+        var sound = this.getNowPlaying();
+        if (sound.playState === 1) {
+            sound.callbacks.onresume.call(sound);
+        } else {
+            sound.callbacks.onpause.call(sound);
+        }
+    },
     togglePause: function (sid) {
         if (this.sounds[sid].readyState == 0) {
             this.play(sid);
         } else {
-            Playdar.Util.loadJs(this.getUrl('pausetoggle'));
+            Playdar.Util.loadJs(this.getUrl('pausetoggle', {
+                jsonp: 'Playdar.player.togglePauseCallback'
+            }));
             this.sounds[sid].playState = this.sounds[sid].playState ? 0 : 1;
         }
     },
@@ -199,7 +223,7 @@ Playdar.PlaydarPlayer.prototype = {
         Playdar.Util.loadJs(this.getUrl('pos'));
     },
     setPosition: function (sid, position) {
-        // no method
+        // Not implemented yet
     },
     getNowPlayingSid: function () {
         Playdar.Util.loadJs(this.getUrl('np'));

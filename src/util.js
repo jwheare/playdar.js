@@ -41,7 +41,7 @@ Playdar.Util = {
             var value = params[key];
             key = encodeURIComponent(key);
             
-            if (typeof(value) == 'object') {
+            if (typeof value == 'object') {
                 results.push(Playdar.Util.toQueryPair(key, JSON.stringify(value)));
             } else {
                 results.push(Playdar.Util.toQueryPair(key, value));
@@ -226,7 +226,7 @@ Playdar.Util = {
         var location = {};
         // Use the window.location to extract the location keys
         for (k in window.location) {
-            if ((typeof(window.location[k]) === 'string')) {
+            if (typeof window.location[k] === 'string') {
                 location[k] = dummy[k];
             }
         }

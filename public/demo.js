@@ -27,10 +27,13 @@
                 resolveForm();
             }
         },
-        onResults: function (response, finalAnswer) {
+        onResults: function (response, lastPoll) {
+            if (typeof console !== 'undefined') {
+                console.log('Polling ' + response.qid);
+            }
             var row = buildResultRow(response.qid, response.query.artist, response.query.track);
             $('span.matches', row).text(response.results.length);
-            if (finalAnswer) {
+            if (lastPoll) {
                 if (response.results.length) {
                     Playdar.player.register_stream(response.results[0]);
                     row.click(function (e) {
@@ -43,7 +46,7 @@
                 if (response.solved) {
                     row.addClass('perfectMatch');
                 }
-                if (typeof(console) !== 'undefined') {
+                if (typeof console !== 'undefined') {
                     console.dir(response);
                 }
             }

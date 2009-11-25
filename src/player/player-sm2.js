@@ -120,7 +120,7 @@ Playdar.SM2Player.prototype = {
                 Playdar.scrobbler.stop();
             }
         }
-        var sound = this.getNowPlaying();
+        var nowPlaying = this.getNowPlaying();
         if (nowPlaying) {
             if (nowPlaying.playState == 1) {
                 nowPlaying.setPosition(1);

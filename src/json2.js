@@ -159,7 +159,6 @@
 
 if (!this.JSON) {
     this.JSON = {};
-    console.log(1);
 }
 
 (function () {

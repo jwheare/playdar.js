@@ -99,7 +99,7 @@ Playdar.SM2Player.prototype = {
         return sound;
     },
     play_stream: function (sid) {
-        var sound = this.soundmanager.getSoundById('s_' + sid);
+        var sound = this.getSound(sid);
         if (this.nowplayingid != sid) {
             this.stop_current();
             if (sound.playState === 0) {
@@ -120,11 +120,11 @@ Playdar.SM2Player.prototype = {
                 Playdar.scrobbler.stop();
             }
         }
-        if (this.nowplayingid) {
-            var sound = this.soundmanager.getSoundById('s_' + this.nowplayingid);
-            if (sound.playState == 1) {
-                sound.setPosition(1);
-                sound.stop();
+        var sound = this.getNowPlaying();
+        if (nowPlaying) {
+            if (nowPlaying.playState == 1) {
+                nowPlaying.setPosition(1);
+                nowPlaying.stop();
             }
             this.nowplayingid = null;
         }
@@ -145,6 +145,14 @@ Playdar.SM2Player.prototype = {
             return true;
         }
         return false;
+    },
+    getNowPlaying: function () {
+        if (this.nowplayingid) {
+            return this.getSound(this.nowplayingid);
+        }
+    },
+    getSound: function (sid) {
+        return this.soundmanager.getSoundById('s_' + sid);
     },
     toggle_nowplaying: function () {
         if (this.nowplayingid) {

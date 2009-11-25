@@ -70,7 +70,7 @@ Playdar.Scrobbler.prototype = {
                 scrobbler.resume();
             },
             onfinish: function () {
-                if (!this.chained) {
+                if (!this.options.chained) {
                     scrobbler.stop();
                 }
             },

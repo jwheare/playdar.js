@@ -41,7 +41,7 @@ Playdar = {
     beforeunload: function (e) {
         if (Playdar.player) {
             var sound = Playdar.player.getNowPlaying();
-            if (sound && sound.playState == 1) {
+            if (sound && sound.playState == 1 && !sound.paused) {
                 var confirmation = "The music will stop if you leave this page.";
                 e.returnValue = confirmation;
                 return confirmation;

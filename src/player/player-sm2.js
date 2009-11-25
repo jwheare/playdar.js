@@ -76,7 +76,7 @@ Playdar.SM2Player.prototype = {
         
         var sound_options = Playdar.Util.extendObject({
             id: 's_' + result.sid,
-            url: Playdar.client.get_stream_url(result.sid),
+            url: result.external ? result.url : Playdar.client.get_stream_url(result.sid),
             isMovieStar: Playdar.SM2Player.MIMETYPES[result.mimetype] === true,
             bufferTime: 2
         }, options);

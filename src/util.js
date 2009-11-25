@@ -197,7 +197,7 @@ Playdar.Util = {
                         keys.push(optionName);
                         optionMap[optionName] = [];
                     }
-                    optionMap[optionName].push(options);
+                    optionMap[optionName].push(options[optionName]);
                 }
             }
         }
@@ -211,7 +211,7 @@ Playdar.Util = {
                 return function () {
                     // Call each function that's been mapped to this property
                     for (var j = 0; j < mappedOptions.length; j++) {
-                        mappedOptions[j][key].apply(this, arguments);
+                        mappedOptions[j].apply(this, arguments);
                     }
                 };
             })(key, optionMap[key]);

@@ -68,6 +68,10 @@ Playdar.SM2Player.prototype = {
         return mime_types;
     },
     register_stream: function (result, options) {
+        if (!result.sid) {
+            result.sid = Playdar.Util.generate_uuid();
+            options.external = true;
+        }
         if (this.results[result.sid]) {
             return false;
         }
@@ -76,7 +80,7 @@ Playdar.SM2Player.prototype = {
         
         var sound_options = Playdar.Util.extendObject({
             id: 's_' + result.sid,
-            url: result.external ? result.url : Playdar.client.get_stream_url(result.sid),
+            url: options.external ? result.url : Playdar.client.get_stream_url(result.sid),
             isMovieStar: Playdar.SM2Player.MIMETYPES[result.mimetype] === true,
             bufferTime: 2
         }, options);

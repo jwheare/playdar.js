@@ -53,12 +53,6 @@ Playdar.Scrobbler.prototype = {
     getSoundCallbacks: function (result) {
         var scrobbler = this;
         return {
-            onload: function () {
-                if (this.readyState == 2) { // failed/error
-                    scrobbler.stop();
-                    this.unload();
-                }
-            },
             onplay: function () {
                 // scrobbler.start isn't called until the first whileplaying callback
                 this.scrobbleStart = true;

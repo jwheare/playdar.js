@@ -127,8 +127,8 @@ Playdar.SM2Player.prototype = {
         var nowPlaying = this.getNowPlaying();
         if (nowPlaying) {
             if (nowPlaying.playState == 1) {
-                nowPlaying.setPosition(1);
                 nowPlaying.stop();
+                nowPlaying.unload();
             }
             this.nowplayingid = null;
         }

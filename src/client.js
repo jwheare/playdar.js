@@ -365,6 +365,15 @@ Playdar.Client.prototype = {
         }
         return false;
     },
+    handleResultsCallback: function (response, final_answer) {
+        if (this.resultsCallbacks[response.qid]) {
+            // try a custom handler registered for this query id
+            this.resultsCallbacks[response.qid](response, final_answer);
+        } else {
+            // fall back to standard handler
+            this.listeners.onResults(response, final_answer);
+        }
+    },
     handleResults: function (response) {
         // Check resolving hasn't been cancelled
         if (this.resolutionsInProgress.queries[response.qid]) {
@@ -373,13 +382,7 @@ Playdar.Client.prototype = {
             if (Playdar.statusBar) {
                 Playdar.statusBar.handleResults(response, final_answer);
             }
-            if (this.resultsCallbacks[response.qid]) {
-                // try a custom handler registered for this query id
-                this.resultsCallbacks[response.qid](response, final_answer);
-            } else {
-                // fall back to standard handler
-                this.listeners.onResults(response, final_answer);
-            }
+            this.handleResultsCallback(response, final_answer);
             // Check to see if we can make some more resolve calls
             if (final_answer) {
                 delete this.resolutionsInProgress.queries[response.qid];

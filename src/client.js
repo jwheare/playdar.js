@@ -94,7 +94,10 @@ Playdar.Client.prototype = {
         }
     },
     clearAuth: function () {
-        Playdar.unload();
+        if (Playdar.scrobbler) {
+            // Stop scrobbling
+            Playdar.scrobbler.stop(true);
+        }
         // Revoke auth at the server
         Playdar.Util.loadJs(this.getRevokeUrl());
         // Clear auth token

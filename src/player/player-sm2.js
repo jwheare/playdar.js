@@ -128,8 +128,8 @@ Playdar.SM2Player.prototype = {
         if (nowPlaying) {
             if (nowPlaying.playState == 1) {
                 nowPlaying.stop();
-                nowPlaying.unload();
             }
+            nowPlaying.unload();
             this.nowplayingid = null;
         }
         // Update status bar

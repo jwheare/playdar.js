@@ -6,8 +6,10 @@ Playdar.SM2Player = function (soundmanager, swfUrl, onready, options) {
     
     // soundmanager can be a jsUrl or the soundManager global
     if (typeof soundmanager == 'string') {
-        Playdar.Util.loadJs(soundmanager, 'soundManager', function (soundmanager) {
-            Playdar.player.setupSoundmanager(soundmanager, swfUrl, onready, options);
+        SM2_DEFER = true;
+        Playdar.Util.loadJs(soundmanager, 'SoundManager', function (SoundManager) {
+            soundManager = new SoundManager();
+            Playdar.player.setupSoundmanager(soundManager, swfUrl, onready, options);
         });
     } else {
         Playdar.player.setupSoundmanager(soundmanager, swfUrl, onready, options);
@@ -15,7 +17,6 @@ Playdar.SM2Player = function (soundmanager, swfUrl, onready, options) {
 };
 
 Playdar.SM2Player.DefaultOptions = {
-    waitForWindowLoad: true,
     // Enable flash 9 features, like mpeg4 support
     flashVersion: 9,
     useMovieStar: true,
@@ -45,13 +46,13 @@ Playdar.SM2Player.MIMETYPES = {
 };
 Playdar.SM2Player.prototype = {
     setupSoundmanager: function (soundmanager, swfUrl, onready, options) {
+        this.soundmanager = soundmanager;
         // Merge in defaults
         options = options || {};
         options.url = swfUrl;
         for (var k in Playdar.SM2Player.DefaultOptions) {
             options[k] = options[k] || Playdar.SM2Player.DefaultOptions[k];
         }
-        this.soundmanager = soundmanager;
         // Set soundManager options
         for (var k in options) {
             this.soundmanager[k] = options[k];
@@ -59,6 +60,7 @@ Playdar.SM2Player.prototype = {
         if (onready) {
             this.soundmanager.onready(onready);
         }
+        this.soundmanager.beginDelayedInit();
     },
     getMimeTypes: function () {
         var mime_types = [];

@@ -70,6 +70,7 @@ Playdar.SM2Player.prototype = {
         return mime_types;
     },
     register_stream: function (result, options) {
+        options = options || {};
         if (!result.sid) {
             result.sid = Playdar.Util.generate_uuid();
             options.external = true;

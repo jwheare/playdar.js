@@ -17,7 +17,7 @@ Playdar.SM2Player = function (soundmanager, swfUrl, onready, options) {
 };
 
 Playdar.SM2Player.DefaultOptions = {
-    // Enable flash 9 features, like mpeg4 support
+    // Enable flash 9 features, like mpeg4 support and video
     flashVersion: 9,
     useMovieStar: true,
     // Debug settings
@@ -42,7 +42,8 @@ Playdar.SM2Player.MIMETYPES = {
     "audio/x-m4b": true,
     "audio/mp4v": true,
     "audio/3gp": true,
-    "audio/3g2": true
+    "audio/3g2": true,
+    "video/x-m4v": true
 };
 Playdar.SM2Player.prototype = {
     setupSoundmanager: function (soundmanager, swfUrl, onready, options) {
@@ -84,7 +85,8 @@ Playdar.SM2Player.prototype = {
         var sound_options = Playdar.Util.extendObject({
             id: 's_' + result.sid,
             url: options.external ? result.url : Playdar.client.get_stream_url(result.sid),
-            isMovieStar: Playdar.SM2Player.MIMETYPES[result.mimetype] === true,
+            isMovieStar: Playdar.SM2Player.MIMETYPES[result.mimetype] ? true : null, // null = autodetect,
+            useVideo: true,
             bufferTime: 2
         }, options);
         

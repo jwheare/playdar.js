@@ -315,12 +315,7 @@ Playdar.Client.prototype = {
     getResults: function (qid) {
         // Check resolving hasn't been cancelled
         if (this.resolutionsInProgress.queries[qid]) {
-            // Use the long response method instead of polling for daemons that support it
-            if (this.statResponse.version != '0.1.0') {
-                return this.getResultsLong(qid);
-            } else {
-                return this.getResultsPoll(qid);
-            }
+            return this.getResultsPoll(qid);
         }
     },
     // Start polling for results for a query id
@@ -347,15 +342,13 @@ Playdar.Client.prototype = {
         if (!final_answer) {
             setTimeout(function () {
                 callback.call(scope, response.qid);
-            }, response.poll_interval || response.refresh_interval);
-            // response.refresh_interval is deprecated.
+            }, response.poll_interval);
         }
         return final_answer;
     },
     shouldStopPolling: function (response) {
         // Stop if the server tells us to
-        // response.refresh_interval is deprecated. (undefined <= 0 === false)
-        if (response.poll_interval <= 0 || response.refresh_interval <= 0) {
+        if (response.poll_interval <= 0) {
             return true;
         }
         // Stop if the query is solved

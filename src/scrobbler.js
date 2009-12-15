@@ -72,7 +72,13 @@ Playdar.Scrobbler.prototype = {
                 // At this point we've finished the initial load and are actually playing
                 if (this.scrobbleStart) {
                     this.scrobbleStart = false;
-                    scrobbler.start(result.artist, result.track, result.album, result.duration);
+                    // If the result doesn't have a duration, use an estimate from SoundManager2
+                    var durationEstimate = Math.floor(this.durationEstimate/1000);
+                    if (durationEstimate < 30) {
+                        durationEstimate = 31;
+                    }
+                    var duration = result.duration || durationEstimate;
+                    scrobbler.start(result.artist, result.track, result.album, duration);
                 }
             }
         };

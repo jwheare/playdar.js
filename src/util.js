@@ -225,7 +225,7 @@ Playdar.Util = {
         dummy.href = url;
         var location = {};
         // Use the window.location to extract the location keys
-        for (k in window.location) {
+        for (var k in window.location) {
             if (typeof window.location[k] === 'string') {
                 location[k] = dummy[k];
             }

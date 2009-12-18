@@ -43,7 +43,8 @@ Playdar.SM2Player.MIMETYPES = {
     "audio/mp4v": true,
     "audio/3gp": true,
     "audio/3g2": true,
-    "video/x-m4v": true
+    "video/x-m4v": true,
+    "video/mp4": true
 };
 Playdar.SM2Player.prototype = {
     setupSoundmanager: function (soundmanager, swfUrl, onready, options) {
@@ -51,11 +52,12 @@ Playdar.SM2Player.prototype = {
         // Merge in defaults
         options = options || {};
         options.url = swfUrl;
-        for (var k in Playdar.SM2Player.DefaultOptions) {
+        var k;
+        for (k in Playdar.SM2Player.DefaultOptions) {
             options[k] = options[k] || Playdar.SM2Player.DefaultOptions[k];
         }
         // Set soundManager options
-        for (var k in options) {
+        for (k in options) {
             this.soundmanager[k] = options[k];
         }
         if (onready) {

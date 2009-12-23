@@ -61,12 +61,60 @@ Playdar.Util = {
     
     // JSON loader
     loadJs: function (url, checkForGlobal, onLoad) {
-       var s = document.createElement("script");
-       s.src = url;
-       document.getElementsByTagName("head")[0].appendChild(s);
-       if (checkForGlobal) {
-           Playdar.Util.pollForGlobal(checkForGlobal, onLoad);
-       }
+        if (typeof url != 'string' && url.join && url.length == 2) {
+            // URL is a 2 length array when built with getUrl and Playdar.USE_JSONP is false
+            // So we use XHR and pass in the response to the callback
+            // try...catch exception handling down to the user.
+            var response = this.loadJson(url[0]);
+            url[1](response);
+        } else {
+            var s = document.createElement("script");
+            s.src = url;
+            document.getElementsByTagName("head")[0].appendChild(s);
+            if (checkForGlobal) {
+                Playdar.Util.pollForGlobal(checkForGlobal, onLoad);
+            }
+        }
+    },
+    loadJson: function (url, method, options) {
+        var request = this.xhr(url, method, options);
+        this.checkJsonResponse(request);
+        return JSON.parse(request.responseText);
+    },
+    xhr: function (url, method, options) {
+        method = method || 'GET';
+        options = options || {};
+        var request = null;
+        if (typeof XMLHttpRequest != "undefined") {
+            request = new XMLHttpRequest();
+        } else if (typeof ActiveXObject != "undefined") {
+            request = new ActiveXObject("Microsoft.XMLHTTP");
+        } else {
+            throw new Error("No XMLHTTPRequest support detected");
+        }
+        request.open(method, url, false);
+        if (options.headers) {
+            var headers = options.headers;
+            for (var headerName in headers) {
+                request.setRequestHeader(headerName, headers[headerName]);
+            }
+        }
+        request.send(options.body || "");
+        return request;
+    },
+    checkJsonResponse: function (request) {
+        if (request.status >= 400) {
+            var result;
+            try {
+                result = JSON.parse(request.responseText);
+            } catch (ParseError) {
+                result = {
+                    error: "unknown",
+                    reason: request.responseText
+                };
+            }
+            throw result;
+        }
     },
     pollForGlobal: function (globalObject, onLoad) {
        setTimeout(function () {

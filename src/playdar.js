@@ -22,6 +22,7 @@ Playdar = {
     MAX_CONCURRENT_RESOLUTIONS: 5,
     USE_STATUS_BAR: true,
     USE_SCROBBLER: true,
+    USE_JSONP: true,
     
     client: null,
     statusBar: null,

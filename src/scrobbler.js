@@ -2,12 +2,25 @@ Playdar.Scrobbler = function () {
     Playdar.scrobbler = this;
 };
 Playdar.Scrobbler.prototype = {
-    getUrl: function (method, query_params) {
+    getUrl: function (method, query_params, callback) {
         query_params = query_params || {};
         query_params.call_id = new Date().getTime();
-        query_params.jsonp = query_params.jsonp || 'Playdar.nop';
         Playdar.client.addAuthToken(query_params);
-        return Playdar.client.getBaseUrl("/audioscrobbler/" + method, query_params);
+        if (Playdar.USE_JSONP) {
+            // Add the callback, as a string jsonp parameter to the URL
+            callback ? ("Playdar.scrobbler." + callback) : "Playdar.nop";
+            query_params.jsonp = callback;
+            return Playdar.client.getBaseUrl("/audioscrobbler/" + method, query_params);
+        } else {
+            // Return the callback along with the URL
+            var onLoad = Playdar.nop;
+            if (callback) {
+                onLoad = function () {
+                    Playdar.scrobbler[callback].apply(Playdar.scrobbler, arguments);
+                };
+            }
+            return [Playdar.client.getBaseUrl("/audioscrobbler/" + method, query_params), onLoad];
+        }
     },
     
     start: function (artist, track, album, duration, track_number, mbid) {
@@ -35,9 +48,7 @@ Playdar.Scrobbler.prototype = {
     },
     stop: function (sleep) {
         this.stopping = true;
-        Playdar.Util.loadJs(this.getUrl("stop"), {
-            jsonp: Playdar.scrobbler.stopCallback
-        });
+        Playdar.Util.loadJs(this.getUrl("stop"), {}, "stopCallback");
         if (sleep) {
             Playdar.Util.sleep(100, function () {
                 return Playdar.scrobbler.stopping == false;

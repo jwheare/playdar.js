@@ -63,7 +63,7 @@ Playdar.Client.prototype = {
         setTimeout(function () {
             Playdar.client.onStatTimeout();
         }, Playdar.STAT_TIMEOUT);
-        Playdar.Util.loadJs(this.getUrl("stat", "handleStat"));
+        Playdar.Util.loadJs(this.getUrl("stat", {}, "handleStat"));
     },
     isAvailable: function () {
         return this.statResponse && this.statResponse.name == "playdar";
@@ -115,6 +115,9 @@ Playdar.Client.prototype = {
         }
     },
     is_authed: function () {
+        if (!Playdar.USE_JSONP) {
+            return true;
+        }
         if (this.auth_token) {
             return true;
         }
@@ -125,8 +128,7 @@ Playdar.Client.prototype = {
     },
     getRevokeUrl: function () {
         return this.getBaseUrl("/authcodes", {
-            revoke: this.auth_token,
-            jsonp: 'Playdar.nop'
+            revoke: this.auth_token
         });
     },
     get_stat_link_html: function (title) {
@@ -272,7 +274,7 @@ Playdar.Client.prototype = {
                 }
                 this.resolutionsInProgress.queries[query.qid] = query;
                 this.resolutionsInProgress.count++;
-                Playdar.Util.loadJs(this.getUrl("resolve", "handleResolution", query));
+                Playdar.Util.loadJs(this.getUrl("resolve", query, "handleResolution"));
             }
         } else {
             this.listeners.onResolveIdle();
@@ -324,16 +326,16 @@ Playdar.Client.prototype = {
             this.pollCounts[qid] = 0;
         }
         this.pollCounts[qid]++;
-        Playdar.Util.loadJs(this.getUrl("get_results", "handleResults", {
+        Playdar.Util.loadJs(this.getUrl("get_results", {
             qid: qid,
             poll: this.pollCounts[qid]
-        }));
+        }, "handleResults"));
     },
     // Get long response results for a query id
     getResultsLong: function (qid) {
-        Playdar.Util.loadJs(this.getUrl("get_results_long", "handleResultsLong", {
+        Playdar.Util.loadJs(this.getUrl("get_results_long", {
             qid: qid
-        }));
+        }, "handleResultsLong"));
     },
     pollResults: function (response, callback, scope) {
         // figure out if we should re-poll, or if the query is solved/failed:
@@ -430,30 +432,35 @@ Playdar.Client.prototype = {
     },
     
     /**
-     * Playdar.client.getUrl(method, jsonp[, query_params]) -> String
+     * Playdar.client.getUrl(method[, query_params][, callback]) -> String | Array
      * - method (String): Method to call on the Playdar API
-     * - jsonp (String | Array): JSONP Callback name.
-     *     If a string, will be passed to Playdar.client.jsonpCallback to build
-     *     a callback of the form Playdar.client.<callback>
-     *     If an array, will be joined together with dot notation.
      * - query_params (Object): An optional object that defines extra query params
+     * - callback (String): JSONP Callback name. Must be a member of Playdar.client
      * 
      * Builds an API URL from a method name, jsonp parameter and an optional object
      * of extra query parameters.
+     * If USE_JSONP is false, returns an array of the URL and the callback function
     **/
-    getUrl: function (method, jsonp, query_params) {
+    getUrl: function (method, query_params, callback) {
         query_params = query_params || {};
         query_params.call_id = new Date().getTime();
         query_params.method = method;
-        if (!query_params.jsonp) {
-            if (jsonp.join) { // duck type check for array
-                query_params.jsonp = jsonp.join('.');
-            } else {
-                query_params.jsonp = this.jsonpCallback(jsonp);
-            }
-        }
         this.addAuthToken(query_params);
-        return this.getBaseUrl("/api/", query_params);
+        if (Playdar.USE_JSONP) {
+            // Add the callback, as a string jsonp parameter to the URL
+            callback = callback ? ("Playdar.client." + callback) : "Playdar.nop";
+            query_params.jsonp = callback;
+            return this.getBaseUrl("/api/", query_params);
+        } else {
+            // Return the callback along with the URL
+            var onLoad = Playdar.nop;
+            if (callback) {
+                onLoad = function () {
+                    Playdar.client[callback].apply(Playdar.client, arguments);
+                };
+            }
+            return [this.getBaseUrl("/api/", query_params), onLoad];
+        }
     },
     
     addAuthToken: function (query_params) {
@@ -466,10 +473,5 @@ Playdar.Client.prototype = {
     // turn a source id into a stream url
     get_stream_url: function (sid) {
         return this.getBaseUrl("/sid/" + sid);
-    },
-    
-    // build the jsonp callback string
-    jsonpCallback: function (callback) {
-        return "Playdar.client." + callback;
     }
 };

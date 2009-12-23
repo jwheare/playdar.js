@@ -32,20 +32,20 @@ Playdar.SM2Player.MIMETYPES = {
     "audio/mpeg": false,
     "audio/aac": true,
     "audio/x-aac": true,
-    "audio/flv": true,
-    "audio/mov": true,
     "audio/mp4": true,
-    "audio/m4v": true,
-    "audio/f4v": true,
     "audio/m4a": true,
     "audio/x-m4a": true,
     "audio/x-m4b": true,
-    "audio/mp4v": true,
-    "audio/3gp": true,
-    "audio/3g2": true,
-    "video/x-m4v": true,
     "video/mp4": true,
-    "video/quicktime": true
+    "video/mov": true,
+    "video/quicktime": true,
+    "video/flv": true,
+    "video/m4v": true,
+    "video/x-m4v": true,
+    "video/mp4v": true,
+    "video/f4v": true,
+    "video/3gp": true,
+    "video/3g2": true
 };
 Playdar.SM2Player.prototype = {
     setupSoundmanager: function (soundmanager, swfUrl, onready, options) {
@@ -85,10 +85,22 @@ Playdar.SM2Player.prototype = {
         // Register result
         this.results[result.sid] = result;
         
+        var url = options.external ? result.url : Playdar.client.get_stream_url(result.sid);
+        var isMp3 = url.match(this.soundmanager.filePatterns.flash8);
+        var isNetStream = url.match(this.soundmanager.netStreamPattern);
+        var isMovieStar;
+        if (isMp3) {
+            // MP3s never use movie star
+            isMovieStar = false;
+        } else {
+            // Trust file extension before mime types
+            isMovieStar = (isNetStream ? true : false) || Playdar.SM2Player.MIMETYPES[result.mimetype];
+        }
+        
         var sound_options = Playdar.Util.extendObject({
             id: 's_' + result.sid,
-            url: options.external ? result.url : Playdar.client.get_stream_url(result.sid),
-            isMovieStar: Playdar.SM2Player.MIMETYPES[result.mimetype] ? true : null, // null = autodetect,
+            url: url,
+            isMovieStar: isMovieStar,
             useVideo: true,
             bufferTime: 2
         }, options);

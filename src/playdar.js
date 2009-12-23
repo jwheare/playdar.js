@@ -7,7 +7,7 @@
  * http://www.playdarjs.org/LICENSE
  */
 Playdar = {
-    VERSION: "0.5.6",
+    VERSION: "0.5.7",
     SERVER_ROOT: "localhost",
     SERVER_PORT: "60210",
     STATIC_HOST: "http://www.playdar.org",

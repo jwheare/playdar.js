@@ -108,18 +108,28 @@ Once you've got a good result, you can construct a URL to stream by calling `Pla
 
     alert("Stream URL: " + Playdar.client.get_stream_url(result.sid));
 
-The Playdar library also has a built in wrapper for the [SoundManager 2 audio library](http://www.schillmania.com/projects/soundmanager2/), available through the `Playdar.player` module. Simply include the `soundmanager2.js` file, configure the global `soundManager` object it creates and pass it into the `Playdar.setupPlayer` function to initialise the `Playdar.player` module.
+The Playdar library also has a built in wrapper for the [SoundManager 2 audio library](http://www.schillmania.com/projects/soundmanager2/), available through the `Playdar.player` module. Simply upload the `soundmanager2.js` and `soundmanager2_flash9.swf` files to your server, and pass their file paths into the `Playdar.setupPlayer` function to initialise the `Playdar.player` module.
 
-    soundManager.url = '/path/to/soundmanager2_flash9.swf';
-    soundManager.flashVersion = 9;
-    soundManager.onload = function () {
-        Playdar.setupPlayer(soundManager);
-        Playdar.client.go();
-    };
+    Playdar.setupPlayer(
+        '/path/to/soundmanager2.js',
+        '/path/to/soundmanager2_flash9.swf',
+        function onready (status) {
+            if (status.success) {
+                Playdar.client.go();
+            } else {
+                // soundManager failed to load properly
+            }
+        },
+        {
+            // extra options for soundManager
+        }
+    );
 
-Since SoundManager works via a flash object that’s loaded asynchronously, you need to wait for the soundManager.onload event before calling `Playdar.client.go()`, or else you may end up calling SoundManager functions before it’s ready.
+Since SoundManager works via a flash object that’s loaded asynchronously, you need to wait for the `onready` callback before calling `Playdar.client.go()`, or else you may end up calling SoundManager functions before it’s ready.
 
-You now have a couple of methods available for registering and playing Playdar streams:
+The fourth optional argument is an object that lets you pass in <a href="http://www.schillmania.com/projects/soundmanager2/doc/#soundmanager-properties">extra options</a> to the soundManager JavaScript object.
+
+Now you’ve set up the player, you’ve got a couple of methods available for registering and playing Playdar streams:
 
     // register_stream passes options onto SM createSound
     Playdar.player.register_stream(result, {

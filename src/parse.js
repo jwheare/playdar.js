@@ -1,6 +1,6 @@
 Playdar.Parse = {
     getProperty: function (collection, prop) {
-        var prop = prop || 'textContent';
+        prop = prop || 'textContent';
         var i, coll, property;
         for (i = 0; i < collection.length; i++) {
             coll = collection[i];

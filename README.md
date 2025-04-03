@@ -1,6 +1,6 @@
-[Playdar.js](http://www.playdarjs.org/) is a JavaScript client library for interacting with the [Playdar HTTP API](http://www.playdar.org/api.html).
+Playdar.js is a JavaScript client library for interacting with the [Playdar HTTP API](http://www.playdar.org/api.html).
 
-The source code is distributed under the terms of the [BSD license](http://www.playdarjs.org/LICENSE) and uses [Semantic Versioning](http://semver.org/)
+The source code is distributed under the terms of the BSD license and uses [Semantic Versioning](http://semver.org/)
 
 Here’s how you can use it to query Playdar for a specific track:
 
@@ -42,7 +42,7 @@ If you'd like to streamline the auth process, you can specify a `receiverurl` on
 
 After a visitor allows access to Playdar, the authorisation dialog will redirect to your `receiverurl`, with an authentication token in the URL. JavaScript on the `receiverurl` reads this token from the `window.location` and passes it back to your application via `window.opener`. Playdar.js then stores this token in a cookie for your domain. This only works if `receiverurl` is on the same domain as your application.
 
-Use this file as your `receiverurl`: [playdar_auth.html](http://www.playdarjs.org/playdar_auth.html)
+Use this file as your `receiverurl`: [playdar_auth.html](./public/playdar_auth.html)
 
 Resolving content
 =================
